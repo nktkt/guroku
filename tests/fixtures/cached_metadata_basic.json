@@ -1,0 +1,32 @@
+{
+  "_id": "is-odd",
+  "name": "is-odd",
+  "dist-tags": {
+    "latest": "3.0.1"
+  },
+  "versions": {
+    "3.0.1": {
+      "name": "is-odd",
+      "version": "3.0.1",
+      "description": "Returns true if the given number is odd, and is an integer that does not exceed the JavaScript MAXIMUM_SAFE_INTEGER.",
+      "main": "index.js",
+      "license": "MIT",
+      "dependencies": {
+        "is-number": "^6.0.0"
+      },
+      "dist": {
+        "shasum": "8c6e8e89bd1e83d68c0e75a12a6c4d2b56f5f000",
+        "tarball": "https://registry.npmjs.org/is-odd/-/is-odd-3.0.1.tgz",
+        "integrity": "sha512-CQpnWPrDwmP1+SMHXZhtLtJv90yiyVfluGsX5iNCVkrhQtU3TQHsUWPG9wkdk9Lgd5yNpAg9jQEo90CBaXgWMA==",
+        "fileCount": 4,
+        "unpackedSize": 1953
+      },
+      "_id": "is-odd@3.0.1"
+    }
+  },
+  "time": {
+    "modified": "2018-09-30T12:00:00.000Z",
+    "created": "2014-12-01T00:00:00.000Z",
+    "3.0.1": "2018-09-30T12:00:00.000Z"
+  }
+}

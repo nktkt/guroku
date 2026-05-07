@@ -1,0 +1,59 @@
+CAS-write path: store::ensure_extracted_at
+==========================================
+
+          +-----------------------+
+          |   tarball_bytes (in)  |
+          +-----------+-----------+
+                      |
+                      v
+          +-----------------------+
+          | compute SHA-512(bytes)|
+          +-----------+-----------+
+                      |
+                      v
+   +----------------------------------------------+
+   | target = ~/.guroku/cas/<sha[0:2]>/<sha[2:]>/ |
+   +----------------------+-----------------------+
+                          |
+                          v
+            < target/.guroku-cas-ready exists? >
+                  |                    |
+              YES |                    | NO
+                  v                    v
+        +-------------------+   +---------------------+
+        | return target     |   | mkdir -p parent(t)  |
+        | (cache hit)       |   +----------+----------+
+        +-------------------+              |
+                                           v
+                                +-------------------------+
+                                | tmp = target + ".tmp"   |
+                                +------------+------------+
+                                             |
+                                             v
+                                +-------------------------+
+                                | tarball::extract(bytes, |
+                                |               &tmp)     |
+                                +------------+------------+
+                                             |
+                                             v
+                                +-------------------------+
+                                | write                   |
+                                | tmp/.guroku-cas-ready   |
+                                +------------+------------+
+                                             |
+                                             v
+                              < target already exists? >
+                                  |                |
+                              YES |                | NO
+                                  v                v
+                       +-------------------+  +------------------+
+                       | rm -rf tmp        |  | fs::rename(tmp,  |
+                       | return target     |  |             target)
+                       +-------------------+  | return target    |
+                                              +------------------+
+
+Legend (module : file)
+----------------------
+  store     : src/store.rs
+  tarball   : src/tarball.rs
+  integrity : src/integrity.rs

@@ -1,0 +1,69 @@
+# NOTE: This workflow exercises `guroku install` against the public npm
+# registry. It can fail intermittently due to registry availability or
+# transient network issues. Re-running the failed job is the appropriate
+# response before treating a failure as a real regression.
+name: install-smoketest
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  smoketest:
+    name: ${{ matrix.os }} / ${{ matrix.example }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        example:
+          - examples/sample-project
+          - examples/with-lockfile
+          - examples/strict-layout
+          - examples/transitive-chain
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        timeout-minutes: 5
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        timeout-minutes: 5
+
+      - name: Cache cargo artifacts
+        uses: Swatinem/rust-cache@v2
+        timeout-minutes: 5
+
+      - name: Build guroku (release)
+        run: cargo build --release
+        timeout-minutes: 5
+
+      - name: Reset example state
+        if: matrix.example != 'examples/with-lockfile'
+        run: rm -rf node_modules guroku.lock
+        working-directory: ${{ matrix.example }}
+        timeout-minutes: 5
+
+      - name: Run guroku install
+        run: ../../target/release/guroku install
+        working-directory: ${{ matrix.example }}
+        timeout-minutes: 5
+
+      - name: Verify node_modules exists
+        run: |
+          if [ ! -d node_modules ]; then
+            echo "node_modules directory was not created"
+            exit 1
+          fi
+        working-directory: ${{ matrix.example }}
+        timeout-minutes: 5

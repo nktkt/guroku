@@ -1,0 +1,93 @@
+guroku v0.3 :: install pipeline
+================================================================
+
+           +--------------------------+
+           |    `guroku install`      |
+           |    (commands::install)   |
+           +-------------+------------+
+                         |
+                         v
+           +--------------------------+
+           | 1. read package.json     |
+           |    Manifest::read_from   |
+           +-------------+------------+
+                         |
+                         v
+           +--------------------------+
+           | 2. parse roots into      |
+           |    (name, range) pairs   |
+           +-------------+------------+
+                         |
+                         v
+           +--------------------------+
+           | 3. read guroku.lock      |
+           |    (if present)          |
+           +-------------+------------+
+                         |
+                         v
+                < --frozen-lockfile? >
+                  /                \
+              YES /                  \ NO
+                 v                    v
+   +-----------------------+   +--------------------------+
+   | install_from_lock     |   | 5. resolver::resolve     |
+   | (skip resolution)     |   |--------------------------|
+   +-----------+-----------+   | - prefetch root metadata |
+               |               |   in parallel            |
+               |               |   (FuturesUnordered)     |
+               |               | - BFS over deps          |
+               |               | - max_satisfying picks   |
+               |               |   versions               |
+               |               | - ResolutionConflict if  |
+               |               |   sticky-first fails     |
+               |               +-------------+------------+
+               |                             |
+               |                             v
+               |               +--------------------------+
+               |               | 6. write guroku.lock     |
+               |               |    Lockfile::write_to    |
+               |               +-------------+------------+
+               |                             |
+               |                             v
+               |               +--------------------------+
+               |               | 7. for each package      |
+               |               |    (concurrency = 8)     |
+               |               |--------------------------|
+               |               | - fetch tarball (reqwest)|
+               |               | - verify SHA-512         |
+               |               |   integrity::verify      |
+               |               | - store::ensure_         |
+               |               |   extracted_at           |
+               |               |   (~/.guroku/cas, &bytes)|
+               |               +-------------+------------+
+               |                             |
+               +--------------+--------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 8. linker::populate_node_modules    |
+           |-------------------------------------|
+           | - mkdir node_modules/.guroku        |
+           | - link_hardlink_tree                |
+           |     CAS --> .guroku/<name>@<ver>/   |
+           |             node_modules/<name>     |
+           | - sibling symlinks for each         |
+           |   package's deps                    |
+           | - top-level surface symlinks for    |
+           |   direct deps                       |
+           +------------------+------------------+
+                              |
+                              v
+                  +-----------------------+
+                  | populated node_modules|
+                  +-----------------------+
+
+----------------------------------------------------------------
+Legend (module : filename)
+  resolver  : src/resolver.rs
+  registry  : src/registry.rs
+  integrity : src/integrity.rs
+  store     : src/store.rs
+  linker    : src/linker.rs
+  lockfile  : src/lockfile.rs
+  commands  : src/commands/install.rs

@@ -1,0 +1,21 @@
+# Expected node_modules layout under guroku v0.3 strict mode
+node_modules/
+├── .guroku/
+│   ├── is-number@6.0.0/
+│   │   └── node_modules/
+│   │       └── is-number/
+│   │           ├── package.json
+│   │           └── index.js
+│   ├── is-odd@3.0.1/
+│   │   └── node_modules/
+│   │       ├── is-odd/
+│   │       │   ├── package.json
+│   │       │   └── index.js
+│   │       └── is-number -> ../../is-number@6.0.0/node_modules/is-number
+│   └── lodash@4.17.21/
+│       └── node_modules/
+│           └── lodash/
+│               ├── package.json
+│               └── lodash.js
+├── is-odd -> .guroku/is-odd@3.0.1/node_modules/is-odd
+└── lodash -> .guroku/lodash@4.17.21/node_modules/lodash

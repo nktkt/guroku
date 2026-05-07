@@ -1,0 +1,105 @@
+name: Install problem
+description: Report a `guroku install` failure or unexpected behaviour.
+title: "[install] "
+labels: ["install", "bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a `guroku install` problem.
+
+        Before filing this issue, please read `docs/troubleshooting.md` first.
+        Many install failures (lockfile drift, stale `node_modules`, hardlink
+        permission issues, registry auth) are covered there with a known fix.
+        If the troubleshooting guide does not resolve your issue, please
+        continue and fill in the form below.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What command did you run, what did you expect to happen, and what did you observe instead?
+      placeholder: |
+        Command: guroku install
+        Expected: ...
+        Observed: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: package-json
+    attributes:
+      label: package.json
+      description: Paste the full contents of the `package.json` from the project where the install failed.
+      render: json
+    validations:
+      required: true
+
+  - type: textarea
+    id: guroku-lock
+    attributes:
+      label: guroku.lock (if it exists)
+      description: Paste the contents of `guroku.lock` if one was present at the time of the failure. Leave blank if the project had no lockfile.
+      render: json
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: Full output of `GUROKU_LOG=debug guroku install`. Please do not truncate.
+      render: shell
+    validations:
+      required: true
+
+  - type: input
+    id: guroku-version
+    attributes:
+      label: guroku version
+      description: "output of `guroku --version`"
+      placeholder: 0.3.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: operating-system
+    attributes:
+      label: Operating system
+      options:
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Linux x86_64
+        - Linux aarch64
+        - Windows
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: filesystem
+    attributes:
+      label: Filesystem
+      description: Hardlink and symlink behaviour is filesystem-sensitive, so this helps a lot during triage.
+      options:
+        - ext4
+        - btrfs
+        - xfs
+        - APFS
+        - NTFS
+        - exFAT
+        - FUSE/network
+        - other / not sure
+
+  - type: checkboxes
+    id: did-you-check
+    attributes:
+      label: Did you check?
+      options:
+        - label: "I read `docs/troubleshooting.md`."
+        - label: "I tried `rm -rf node_modules guroku.lock` and re-ran the install."
+        - label: "The same install works on the same machine with `npm install` (or pnpm/bun)."
+
+  - type: textarea
+    id: anything-else
+    attributes:
+      label: Anything else?
+      description: Add any other context, related issues, or screenshots here. Optional.

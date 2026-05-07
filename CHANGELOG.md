@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-06
+
+The "It's fast" milestone.
+
+### Added
+- Content-addressable store at `~/.guroku/cas/<sha[0:2]>/<sha[2:]>`, keyed by tarball SHA-512. Atomic inserts via tmp-then-rename + a `.guroku-cas-ready` marker.
+- `src/store.rs`: `ensure_extracted` / `ensure_extracted_at`, `CAS_READY_MARKER`.
+- Hardlink-based linker (`linker::link_hardlink_tree`), with a copy fallback for cross-filesystem cases.
+- Strict pnpm-style `node_modules/.guroku/<name>@<version>/node_modules/<name>/` layout (`linker::populate_node_modules`). Sibling symlinks for declared deps; surface symlinks for direct deps; full handling of scoped names (`@scope+name@<version>` on disk, `@scope/name` in node_modules).
+- `src/http_cache.rs`: ETag-aware metadata cache at `~/.guroku/cache/metadata/`. `RegistryClient::fetch_metadata` now sends `If-None-Match` and treats `304 Not Modified` as a cache hit.
+- `RegistryClient::without_http_cache()` builder method (test/library opt-out).
+- `src/cache.rs` helpers: `cas_dir`, `cas_entry`, `metadata_cache_dir`, `metadata_cache_entry`, `metadata_etag_entry`, `safe_segment` (now `pub`).
+- Parallel root-metadata prefetch in `resolver::resolve` (`FuturesUnordered`).
+- New public modules: `guroku::store`, `guroku::http_cache`.
+
+### Changed
+- `commands::install::install_from_resolution` rewritten around `fetch_into_cas` + `populate_node_modules`. Both `install` and `install --frozen-lockfile` paths now share the CAS code path.
+- `commands::install::run` produces the strict `node_modules` layout instead of a flat copy.
+- The previous `~/.guroku/store/<name>/<version>` directory is no longer written (still readable by older guroku for back-compat). `cache::store_dir` and `cache::package_dir` are retained as deprecated helpers.
+
+### Fixed
+- Concurrent installs of the same package no longer race-corrupt the store. The atomic-rename pattern ensures only one writer wins.
+
+### Known limitations
+- No `guroku store gc` yet — the CAS grows unboundedly. Workaround: `rm -rf ~/.guroku/cas`.
+- Per-tarball CAS only (not per-file like pnpm). Two patch-versions of the same package don't share bytes.
+- Strict layout on Windows requires Developer Mode (or admin) for symlinks. See `docs/internals/strict-layout-windows.md`.
+- Resolver still BFS sticky-first; PubGrub still on a future milestone.
+
 ## [0.2.0] - 2026-05-06
 
 The "It resolves correctly" milestone.

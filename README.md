@@ -4,7 +4,7 @@
 
 `guroku` is an experimental package manager inspired by [npm](https://www.npmjs.com/), [pnpm](https://pnpm.io/), and [bun](https://bun.sh/), built from scratch in Rust. The goal is to combine pnpm's content-addressable storage model with bun's installation speed, while staying small, hackable, and easy to read.
 
-> **Status:** v0.2 ships an end-to-end install path with a real semver-aware resolver and a committed `guroku.lock`. Storage is still a flat copy (CAS + hardlinks land in v0.3), and lifecycle scripts / workspaces are not yet supported. Pre-alpha; expect rough edges.
+> **Status:** v0.3 ships the "It's fast" milestone — content-addressable store + hardlinks + strict pnpm-style `node_modules` layout + parallel metadata prefetch + ETag-aware HTTP cache. Lifecycle scripts and workspaces are still v0.4 work. Pre-alpha; expect rough edges.
 
 ---
 
@@ -64,12 +64,12 @@
 - [x] Frozen-lockfile mode (`--frozen-lockfile`)
 - [x] Dev dependency handling; peer / optional fields are read and round-tripped (auto-install lands in v0.4)
 
-### v0.3 — "It's fast"
-- [ ] Global content-addressable store at `~/.guroku/store`
-- [ ] Hardlink-based linker
-- [ ] Strict pnpm-style `node_modules/.guroku/<pkg>@<ver>` layout
-- [ ] Parallel resolution + download pipeline
-- [ ] HTTP response caching (ETag / If-None-Match)
+### v0.3 — "It's fast" *(shipped 2026-05-06)*
+- [x] Global content-addressable store at `~/.guroku/cas/<sha[0:2]>/<sha[2:]>`
+- [x] Hardlink-based linker (with copy fallback for cross-fs cases)
+- [x] Strict pnpm-style `node_modules/.guroku/<pkg>@<ver>` layout
+- [x] Parallel resolution prefetch + parallel CAS download pipeline
+- [x] HTTP response caching (ETag / If-None-Match)
 
 ### v0.4 — "It's usable"
 - [ ] Lifecycle scripts (`preinstall`, `postinstall`, etc.)

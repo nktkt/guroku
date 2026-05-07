@@ -1,0 +1,11 @@
+{
+  "name": "guroku-example-strict-layout",
+  "version": "0.1.0",
+  "description": "Example project demonstrating guroku v0.3's strict pnpm-style node_modules layout.",
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "is-odd": "^3.0.0",
+    "ms": "^2.1.0"
+  }
+}

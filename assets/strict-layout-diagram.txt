@@ -1,0 +1,52 @@
+# guroku v0.3 storage and node_modules layout
+
+Content-Addressable Store (global, shared across all projects)
+==============================================================
+
+~/.guroku/
+└── cas/
+    ├── ab/
+    │   └── <128-2 hex chars>/
+    │       ├── package.json
+    │       ├── index.js
+    │       └── .guroku-cas-ready
+    └── 7f/
+        └── <128-2 hex chars>/
+            ├── package.json
+            └── lodash.js
+
+
+Project node_modules (strict / isolated layout)
+===============================================
+
+./node_modules/
+├── .guroku/
+│   ├── lodash@4.17.21/
+│   │   └── node_modules/
+│   │       └── lodash/
+│   │           ├── package.json   (hardlink → CAS)
+│   │           └── lodash.js      (hardlink → CAS)
+│   └── is-odd@3.0.1/
+│       └── node_modules/
+│           ├── is-odd/
+│           │   ├── package.json   (hardlink → CAS)
+│           │   └── index.js       (hardlink → CAS)
+│           └── is-number  ─symlink─→  ../../is-number@6.0.0/node_modules/is-number
+├── lodash  ─symlink─→  .guroku/lodash@4.17.21/node_modules/lodash
+└── is-odd  ─symlink─→  .guroku/is-odd@3.0.1/node_modules/is-odd
+
+
+Legend
+======
+
+  ─symlink─→        Filesystem symbolic link. The left-hand path is a
+                    symlink whose target is the right-hand path. Node's
+                    resolver follows it transparently.
+
+  (hardlink → CAS)  The file is a hardlink into ~/.guroku/cas/<aa>/<rest>/.
+                    No bytes are copied — the inode is shared with the CAS
+                    entry, so disk usage stays flat across projects.
+
+  .guroku-cas-ready Sentinel marker written last when a CAS entry has
+                    finished materializing. Its presence means the entry
+                    is safe to hardlink from.

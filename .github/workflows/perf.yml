@@ -1,0 +1,66 @@
+# ---------------------------------------------------------------------------
+# Future work:
+#   This workflow is a placeholder, low-fidelity perf gate. It only times an
+#   end-to-end install of a tiny example project on a single GitHub-hosted
+#   runner, so the numbers are noisy and not suitable for tracking small
+#   regressions.
+#
+#   In v0.4 this should be replaced with:
+#     - a criterion-based microbench harness for the hot paths (resolver,
+#       lockfile parser, on-disk store I/O), and
+#     - proper trend tracking via `benchmark-action/github-action-benchmark`
+#       (a.k.a. continuous-benchmark) or a similar action that stores
+#       historical results and comments regressions on PRs.
+# ---------------------------------------------------------------------------
+
+name: perf
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  bench-install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build guroku (release)
+        run: cargo build --release
+
+      - name: Stage example project
+        run: |
+          rm -rf ~/.guroku target/perf-test
+          mkdir -p target/perf-test
+          cp -R examples/strict-layout target/perf-test/
+          cp target/release/guroku target/perf-test/guroku
+
+      - name: Cold install
+        id: cold
+        run: |
+          cd target/perf-test/strict-layout
+          COLD=$(/usr/bin/time -f '%e' -o /tmp/cold.time ../guroku install 2>&1 1>/dev/null; cat /tmp/cold.time)
+          echo "cold=${COLD}" >> "$GITHUB_OUTPUT"
+
+      - name: Warm install
+        id: warm
+        run: |
+          cd target/perf-test/strict-layout
+          WARM=$(/usr/bin/time -f '%e' -o /tmp/warm.time ../guroku install 2>&1 1>/dev/null; cat /tmp/warm.time)
+          echo "warm=${WARM}" >> "$GITHUB_OUTPUT"
+
+      - name: Summarize
+        run: |
+          echo "cold=${{ steps.cold.outputs.cold }}s warm=${{ steps.warm.outputs.warm }}s" >> "$GITHUB_STEP_SUMMARY"
