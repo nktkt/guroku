@@ -11,7 +11,7 @@ pub async fn run(cwd: &Path) -> Result<()> {
     let manifest = Manifest::read_from(&manifest_path)?;
     let node_modules = cwd.join("node_modules");
 
-    let client = RegistryClient::default()?;
+    let client = RegistryClient::with_default_registry()?;
     let deps: Vec<(String, String)> = manifest
         .all_dependencies()
         .map(|(k, v)| (k.clone(), v.clone()))
@@ -24,7 +24,7 @@ pub async fn run(cwd: &Path) -> Result<()> {
 
     tracing::info!("installing {} packages", deps.len());
 
-    let results: Vec<Result<()>> = stream::iter(deps.into_iter())
+    let results: Vec<Result<()>> = stream::iter(deps)
         .map(|(name, spec)| {
             let client = client.clone();
             let node_modules = node_modules.clone();

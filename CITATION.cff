@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use guroku in academic work, please cite it as below."
+title: "guroku"
+abstract: "A fast, Rust-powered package manager for the JavaScript ecosystem."
+authors:
+  - family-names: "nktkt"
+    alias: "nktkt"
+    # orcid: "https://orcid.org/0000-0000-0000-0000"
+repository-code: "https://github.com/nktkt/guroku"
+url: "https://github.com/nktkt/guroku"
+license: MIT
+version: "0.1.0"
+date-released: "2026-05-06"
+keywords:
+  - rust
+  - npm
+  - package-manager
+  - javascript
+  - node

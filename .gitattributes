@@ -1,0 +1,24 @@
+# Default behavior: normalize line endings to LF for all text files
+* text=auto eol=lf
+
+# Source and configuration text files
+*.rs       text eol=lf
+*.toml     text eol=lf
+*.yml      text eol=lf
+*.yaml     text eol=lf
+*.json     text eol=lf
+*.md       text eol=lf
+
+# Generated lockfile: keep as text with LF, exclude from language stats
+Cargo.lock text eol=lf linguist-generated=true
+
+# Binary assets
+*.png    binary
+*.jpg    binary
+*.gif    binary
+*.tar.gz binary
+*.tgz    binary
+*.zip    binary
+
+# Test fixtures: vendored so they do not dominate language breakdown
+tests/fixtures/** linguist-vendored=true

@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Roadmap
+    url: https://github.com/nktkt/guroku#roadmap
+    about: Check what's already planned before opening a feature request.
+  - name: Discussions
+    url: https://github.com/nktkt/guroku/discussions
+    about: Ask a question, share an idea, or talk about design before filing an issue.
+  - name: Security advisory
+    url: https://github.com/nktkt/guroku/security/advisories/new
+    about: Privately report a security vulnerability. Do not open a public issue for security bugs.

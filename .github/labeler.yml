@@ -1,0 +1,66 @@
+"area/cli":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/cli.rs"
+          - "src/main.rs"
+          - "src/commands/**"
+
+"area/registry":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/registry.rs"
+
+"area/manifest":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/manifest.rs"
+
+"area/tarball":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/tarball.rs"
+
+"area/integrity":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/integrity.rs"
+
+"area/linker":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/linker.rs"
+
+"area/cache":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/cache.rs"
+
+"area/error":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/error.rs"
+
+"documentation":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.md"
+          - "docs/**"
+
+"ci":
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/workflows/**"
+          - ".github/dependabot.yml"
+          - ".github/labeler.yml"
+
+"tests":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "tests/**"
+          - "benches/**"
+
+"dependencies":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "Cargo.toml"
+          - "Cargo.lock"

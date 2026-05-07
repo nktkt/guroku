@@ -1,0 +1,24 @@
+# CODEOWNERS for guroku
+# https://docs.github.com/en/repositories/managing-your-repositories-settings-and-security/customizing-your-repository/about-code-owners
+
+# Default - every file requires review from a default owner.
+*                       @nktkt
+
+# Public Rust API surface - extra eyes on these are appreciated.
+/src/lib.rs             @nktkt
+/src/error.rs           @nktkt
+/src/registry.rs        @nktkt
+/src/manifest.rs        @nktkt
+
+# Storage and the linker - these are where v0.3 will land.
+/src/cache.rs           @nktkt
+/src/linker.rs          @nktkt
+/src/tarball.rs         @nktkt
+/src/integrity.rs       @nktkt
+
+# CI and release tooling.
+/.github/               @nktkt
+
+# Documentation.
+*.md                    @nktkt
+/docs/                  @nktkt

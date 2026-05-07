@@ -1,0 +1,84 @@
+name: Bug report
+description: Report a defect in guroku.
+title: "[bug] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report for guroku.
+
+        Before submitting, please search the existing issues to confirm that this
+        problem has not already been reported. Duplicate reports make triage
+        slower for everyone. If a related issue already exists, consider adding
+        a comment there instead of opening a new one.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the behaviour you observed and what you expected to happen instead.
+      placeholder: |
+        Observed: ...
+        Expected: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Reproduction steps
+      description: A minimal, ordered list of steps that reliably reproduces the issue.
+      value: |
+        ```
+        1. guroku init my-app
+        2. cd my-app
+        3. guroku add <package>
+        4. ...
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Output / logs
+      description: Re-run the failing command with verbose logging and paste the relevant slice below.
+      placeholder: Run with `GUROKU_LOG=debug` and paste the relevant slice of the output here.
+      render: shell
+
+  - type: input
+    id: guroku-version
+    attributes:
+      label: guroku version
+      description: "output of `guroku --version`"
+      placeholder: 0.1.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: operating-system
+    attributes:
+      label: Operating system
+      options:
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Linux x86_64
+        - Linux aarch64
+        - Windows
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: rust-toolchain
+    attributes:
+      label: Rust toolchain
+      description: "output of `rustc --version`"
+      placeholder: 1.79.0 (stable)
+
+  - type: textarea
+    id: anything-else
+    attributes:
+      label: Anything else?
+      description: Add any other context, screenshots, or related issues here. Optional.

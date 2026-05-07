@@ -1,0 +1,12 @@
+{
+  "name": "guroku-sample-project",
+  "version": "0.1.0",
+  "description": "Sample project used to demonstrate guroku install end-to-end.",
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "lodash": "4.17.21",
+    "is-odd": "3.0.1",
+    "ms": "2.1.3"
+  }
+}

@@ -11,7 +11,7 @@ pub async fn run(cwd: &Path, packages: &[String]) -> Result<()> {
         Manifest::default()
     };
     let node_modules = cwd.join("node_modules");
-    let client = RegistryClient::default()?;
+    let client = RegistryClient::with_default_registry()?;
 
     for spec_input in packages {
         let (name, spec) = super::parse_spec(spec_input);

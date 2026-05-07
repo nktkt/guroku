@@ -41,8 +41,7 @@ impl Manifest {
     }
 
     pub fn remove_dependency(&mut self, name: &str) -> bool {
-        self.dependencies.remove(name).is_some()
-            | self.dev_dependencies.remove(name).is_some()
+        self.dependencies.remove(name).is_some() | self.dev_dependencies.remove(name).is_some()
     }
 
     pub fn all_dependencies(&self) -> impl Iterator<Item = (&String, &String)> {

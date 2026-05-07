@@ -20,7 +20,7 @@ impl RegistryClient {
         Ok(Self { base, http })
     }
 
-    pub fn default() -> Result<Self> {
+    pub fn with_default_registry() -> Result<Self> {
         Self::new(Url::parse(DEFAULT_REGISTRY).expect("default registry url is valid"))
     }
 
@@ -38,7 +38,12 @@ impl RegistryClient {
     }
 
     pub async fn fetch_tarball(&self, url: &Url) -> Result<Bytes> {
-        let resp = self.http.get(url.clone()).send().await?.error_for_status()?;
+        let resp = self
+            .http
+            .get(url.clone())
+            .send()
+            .await?
+            .error_for_status()?;
         Ok(resp.bytes().await?)
     }
 }
@@ -57,6 +62,7 @@ impl PackageMetadata {
     ///   - exact version: "1.2.3"
     ///   - dist-tag: "latest", "next"
     ///   - "*" or empty → latest
+    ///
     /// Anything else falls back to "latest" (resolution is the v0.2 milestone).
     pub fn resolve(&self, spec: &str) -> Result<&VersionInfo> {
         if let Some(v) = self.versions.get(spec) {

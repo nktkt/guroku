@@ -1,0 +1,62 @@
+name: "Feature request"
+description: "Suggest an idea for guroku."
+title: "[feature] "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to suggest a feature for guroku.
+
+        Before filing, please skim the README's roadmap. Many ideas may already be planned for v0.2, v0.3, or v0.4, and we'd rather link your use case to an existing roadmap item than track duplicates.
+  - type: textarea
+    id: problem
+    attributes:
+      label: "Problem"
+      description: "What is the user-facing pain or use case this feature addresses?"
+      placeholder: "Describe the problem you are trying to solve, who hits it, and when."
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: "Proposed solution"
+      description: "Describe the API or behaviour you'd like."
+      placeholder: "Sketch the CLI flags, config keys, or runtime behaviour you have in mind."
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "Alternatives considered"
+      description: "Other approaches you've thought about, and why they fall short."
+    validations:
+      required: false
+  - type: dropdown
+    id: scope
+    attributes:
+      label: "Scope"
+      description: "Which area of guroku does this feature belong to?"
+      options:
+        - "Resolver / lockfile (v0.2)"
+        - "Storage / hardlinks (v0.3)"
+        - "Scripts / workspaces (v0.4)"
+        - "Registry / auth (v0.5)"
+        - "Stability / API (v1.0)"
+        - "Other"
+    validations:
+      required: true
+  - type: checkboxes
+    id: compatibility
+    attributes:
+      label: "Compatibility"
+      options:
+        - label: "I understand guroku is pre-alpha and breaking changes may happen"
+          required: true
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: "Additional context"
+      description: "Anything else that would help us evaluate the request (links, screenshots, prior art)."
+    validations:
+      required: false
