@@ -58,6 +58,24 @@ pub enum GurokuError {
     #[error("could not determine cache directory")]
     NoCacheDir,
 
+    #[error(
+        "version conflict for `{name}`: already chose `{chosen}`, but `{requested_by}` requires `{requested}`"
+    )]
+    ResolutionConflict {
+        name: String,
+        chosen: String,
+        requested: String,
+        requested_by: String,
+    },
+
+    #[error("lockfile version mismatch: file is v{found}, this guroku understands v{expected}")]
+    LockfileVersionMismatch { found: u32, expected: u32 },
+
+    #[error(
+        "lockfile is out of date with `package.json` (run `guroku install` without --frozen-lockfile to refresh)"
+    )]
+    LockfileOutOfDate,
+
     #[error("{0}")]
     Other(String),
 }

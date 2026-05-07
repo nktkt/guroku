@@ -22,7 +22,12 @@ pub struct Cli {
 pub enum Command {
     /// Install all dependencies declared in `package.json`.
     #[command(alias = "i")]
-    Install,
+    Install {
+        /// Refuse to refresh the lockfile; fail if `guroku.lock` is out of
+        /// date with `package.json`.
+        #[arg(long)]
+        frozen_lockfile: bool,
+    },
 
     /// Add one or more packages to `dependencies` and install them.
     Add {

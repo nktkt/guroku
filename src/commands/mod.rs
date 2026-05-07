@@ -7,21 +7,8 @@ use crate::registry::VersionInfo;
 use crate::{cache, integrity, linker, registry, tarball};
 use std::path::Path;
 
-/// Shared install primitive used by `install` and `add`. Fetches a single
-/// package version from the registry, verifies its integrity, extracts it into
-/// the store, and links it flat into `node_modules`.
-pub(crate) async fn install_one(
-    client: &registry::RegistryClient,
-    name: &str,
-    spec: &str,
-    node_modules: &Path,
-) -> Result<String> {
-    let metadata = client.fetch_metadata(name).await?;
-    let version_info: VersionInfo = metadata.resolve(spec)?.clone();
-    install_version(client, &version_info, node_modules).await?;
-    Ok(version_info.version)
-}
-
+/// Fetch and install a single resolved `VersionInfo`. Used by both `install`
+/// and `add` after the resolver has produced a flat package set.
 pub(crate) async fn install_version(
     client: &registry::RegistryClient,
     v: &VersionInfo,
@@ -41,9 +28,7 @@ pub(crate) async fn install_version(
                 detail: "no integrity or shasum field on registry record".into(),
             });
         }
-        // Note: shasum-only verification is not supported in v0.1.
-        // The registry returns sha512 `integrity` for all packages published
-        // since 2017, so this only matters for very old packages.
+        // Note: shasum-only verification is not supported in v0.2.
 
         tarball::extract(&bytes, &store_pkg)?;
     } else {
@@ -53,10 +38,10 @@ pub(crate) async fn install_version(
     Ok(())
 }
 
-/// Parse a CLI package spec like `lodash`, `lodash@4.17.21`, or `@scope/x@1`.
+/// Parse a CLI package spec like `lodash`, `lodash@4.17.21`, `@scope/x`,
+/// or `@scope/x@1`.
 pub(crate) fn parse_spec(input: &str) -> (String, String) {
     if let Some(rest) = input.strip_prefix('@') {
-        // scoped: @scope/name[@version]
         if let Some(idx) = rest.find('@') {
             let (name_part, ver_part) = rest.split_at(idx);
             return (format!("@{}", name_part), ver_part[1..].to_string());

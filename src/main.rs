@@ -15,8 +15,10 @@ async fn main() {
         }
     };
 
-    let result = match cli.command.unwrap_or(Command::Install) {
-        Command::Install => commands::install::run(&cwd).await,
+    let result = match cli.command.unwrap_or(Command::Install {
+        frozen_lockfile: false,
+    }) {
+        Command::Install { frozen_lockfile } => commands::install::run(&cwd, frozen_lockfile).await,
         Command::Add { packages } => commands::add::run(&cwd, &packages).await,
         Command::Remove { packages } => commands::remove::run(&cwd, &packages).await,
     };

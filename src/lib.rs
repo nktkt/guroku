@@ -10,9 +10,12 @@ pub mod commands;
 pub mod error;
 pub mod integrity;
 pub mod linker;
+pub mod lockfile;
 pub mod logging;
 pub mod manifest;
 pub mod registry;
+pub mod resolver;
 pub mod tarball;
+pub mod version;
 
 pub use error::{GurokuError, Result};

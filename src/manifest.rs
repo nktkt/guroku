@@ -12,6 +12,10 @@ pub struct Manifest {
     pub dependencies: BTreeMap<String, String>,
     #[serde(default, rename = "devDependencies")]
     pub dev_dependencies: BTreeMap<String, String>,
+    #[serde(default, rename = "peerDependencies")]
+    pub peer_dependencies: BTreeMap<String, String>,
+    #[serde(default, rename = "optionalDependencies")]
+    pub optional_dependencies: BTreeMap<String, String>,
     #[serde(flatten)]
     pub other: BTreeMap<String, serde_json::Value>,
 }
@@ -41,9 +45,15 @@ impl Manifest {
     }
 
     pub fn remove_dependency(&mut self, name: &str) -> bool {
-        self.dependencies.remove(name).is_some() | self.dev_dependencies.remove(name).is_some()
+        let a = self.dependencies.remove(name).is_some();
+        let b = self.dev_dependencies.remove(name).is_some();
+        let c = self.optional_dependencies.remove(name).is_some();
+        a | b | c
     }
 
+    /// Iterate over the dependency maps that the resolver should walk:
+    /// `dependencies` and `devDependencies`. Peer and optional deps are
+    /// excluded because the v0.2 resolver does not walk them.
     pub fn all_dependencies(&self) -> impl Iterator<Item = (&String, &String)> {
         self.dependencies.iter().chain(self.dev_dependencies.iter())
     }

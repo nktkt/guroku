@@ -58,12 +58,15 @@ pub struct PackageMetadata {
 }
 
 impl PackageMetadata {
-    /// Resolve a version spec against the metadata. v0.1 supports:
-    ///   - exact version: "1.2.3"
-    ///   - dist-tag: "latest", "next"
-    ///   - "*" or empty → latest
+    /// Resolve a version spec against the metadata.
     ///
-    /// Anything else falls back to "latest" (resolution is the v0.2 milestone).
+    /// Order of operations:
+    ///   1. Exact version match in `versions`.
+    ///   2. dist-tag lookup (`latest`, `next`, ...).
+    ///   3. Parse as an npm semver range and pick the highest matching
+    ///      version (this is what handles `^1.2.3`, `~1.0`, `>=1 <2`, etc.).
+    ///
+    /// Returns `NoMatchingVersion` if nothing matches.
     pub fn resolve(&self, spec: &str) -> Result<&VersionInfo> {
         if let Some(v) = self.versions.get(spec) {
             return Ok(v);
@@ -73,21 +76,17 @@ impl PackageMetadata {
                 return Ok(v);
             }
         }
-        if spec.is_empty() || spec == "*" || spec == "latest" {
-            if let Some(target) = self.dist_tags.get("latest") {
-                if let Some(v) = self.versions.get(target) {
+        if let Ok(range) = crate::version::parse_range(spec) {
+            let candidates = self
+                .versions
+                .keys()
+                .filter(|k| crate::version::parse_version(k).is_ok())
+                .map(String::as_str);
+            if let Some(picked) = crate::version::max_satisfying(candidates, &range) {
+                let key = picked.to_string();
+                if let Some(v) = self.versions.get(&key) {
                     return Ok(v);
                 }
-            }
-        }
-        // Best-effort fallback: use latest dist-tag if present.
-        if let Some(target) = self.dist_tags.get("latest") {
-            if let Some(v) = self.versions.get(target) {
-                tracing::warn!(
-                    "version spec `{spec}` for `{}` not understood by v0.1; falling back to {target}",
-                    self.name
-                );
-                return Ok(v);
             }
         }
         Err(GurokuError::NoMatchingVersion {

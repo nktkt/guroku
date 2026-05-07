@@ -42,10 +42,19 @@ fn resolve_latest_dist_tag() {
 }
 
 #[test]
-fn resolve_unknown_falls_back_to_latest() {
+fn resolve_caret_picks_highest_in_major() {
+    // v0.2 behavior: `^1` should pick 1.1.0 (highest 1.x) over 1.0.0.
     let meta = metadata_with_tags();
-    let v = meta.resolve("^2").expect("falls back to latest");
+    let v = meta.resolve("^1").expect("resolve ^1");
     assert_eq!(v.version, "1.1.0");
+}
+
+#[test]
+fn resolve_returns_err_when_no_version_satisfies() {
+    // v0.2 behavior: `^2` against a registry that only has 1.x is an error,
+    // not a silent fallback to latest.
+    let meta = metadata_with_tags();
+    assert!(meta.resolve("^2").is_err());
 }
 
 #[test]
