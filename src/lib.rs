@@ -14,10 +14,13 @@ pub mod linker;
 pub mod lockfile;
 pub mod logging;
 pub mod manifest;
+pub mod npmrc;
 pub mod registry;
 pub mod resolver;
+pub mod scripts;
 pub mod store;
 pub mod tarball;
 pub mod version;
+pub mod workspaces;
 
 pub use error::{GurokuError, Result};

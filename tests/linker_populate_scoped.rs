@@ -19,6 +19,7 @@ fn linked(name: &str, version: &str, source_dir: PathBuf) -> LinkedPackage {
         version: version.to_string(),
         source_dir,
         dependencies: BTreeMap::new(),
+        bin_entries: vec![],
     }
 }
 
@@ -92,6 +93,7 @@ fn scoped_with_unscoped_dep() {
         version: "1.0.0".to_string(),
         source_dir: src_a,
         dependencies: a_deps,
+        bin_entries: vec![],
     };
     let pkg_b = linked("b", "1.0.0", src_b);
 
@@ -133,6 +135,7 @@ fn unscoped_with_scoped_dep() {
         version: "1.0.0".to_string(),
         source_dir: src_a,
         dependencies: a_deps,
+        bin_entries: vec![],
     };
     let pkg_b = linked("@scope/b", "1.0.0", src_b);
 

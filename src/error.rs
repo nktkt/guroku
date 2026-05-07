@@ -76,6 +76,21 @@ pub enum GurokuError {
     )]
     LockfileOutOfDate,
 
+    #[error("script `{script}` exited with status {status}")]
+    ScriptFailed { script: String, status: i32 },
+
+    #[error("failed to spawn script `{script}`: {detail}")]
+    ScriptSpawnFailed { script: String, detail: String },
+
+    #[error("no `{name}` script in package.json#scripts")]
+    NoSuchScript { name: String },
+
+    #[error("workspaces misconfigured: {0}")]
+    WorkspaceMisconfigured(String),
+
+    #[error("`{name}` is not on PATH and was not found in node_modules/.bin")]
+    BinNotFound { name: String },
+
     #[error("{0}")]
     Other(String),
 }

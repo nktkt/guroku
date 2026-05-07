@@ -17,10 +17,17 @@ async fn main() {
 
     let result = match cli.command.unwrap_or(Command::Install {
         frozen_lockfile: false,
+        ignore_scripts: false,
     }) {
-        Command::Install { frozen_lockfile } => commands::install::run(&cwd, frozen_lockfile).await,
+        Command::Install {
+            frozen_lockfile,
+            ignore_scripts,
+        } => commands::install::run(&cwd, frozen_lockfile, ignore_scripts).await,
         Command::Add { packages } => commands::add::run(&cwd, &packages).await,
         Command::Remove { packages } => commands::remove::run(&cwd, &packages).await,
+        Command::Run { name, args } => commands::run::run(&cwd, name, &args).await,
+        Command::Exec { command, args } => commands::exec::run(&cwd, &command, &args).await,
+        Command::Workspaces => commands::workspaces::run(&cwd).await,
     };
 
     if let Err(e) = result {

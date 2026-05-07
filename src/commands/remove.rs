@@ -46,7 +46,7 @@ pub async fn run(cwd: &Path, packages: &[String]) -> Result<()> {
         return Ok(());
     }
 
-    let client = RegistryClient::with_default_registry()?;
+    let client = RegistryClient::from_npmrc(cwd)?;
     let resolution = resolver::resolve(&client, &roots).await?;
     super::install::write_lockfile(&resolution, &lock_path)?;
 

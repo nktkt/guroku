@@ -21,6 +21,7 @@ fn pkg(name: &str, version: &str, source_dir: PathBuf) -> LinkedPackage {
         version: version.to_string(),
         source_dir,
         dependencies: BTreeMap::new(),
+        bin_entries: vec![],
     }
 }
 

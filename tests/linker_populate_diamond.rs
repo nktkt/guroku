@@ -26,6 +26,7 @@ fn pkg(name: &str, source_dir: PathBuf, deps: &[(&str, &str)]) -> LinkedPackage 
         version: "1.0.0".to_string(),
         source_dir,
         dependencies,
+        bin_entries: vec![],
     }
 }
 

@@ -4,19 +4,26 @@ use crate::lockfile::{Lockfile, PackageLock, LOCKFILE_NAME};
 use crate::manifest::Manifest;
 use crate::registry::RegistryClient;
 use crate::resolver;
+use crate::scripts;
 use futures::stream::{self, StreamExt};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 const CONCURRENCY: usize = 8;
 
-pub async fn run(cwd: &Path, frozen_lockfile: bool) -> Result<()> {
+/// Lifecycle script names invoked at install time, in order.
+/// `prepare` is run after `postinstall` for the *root* project (matches npm).
+const ROOT_PRE_SCRIPTS: &[&str] = &["preinstall"];
+const ROOT_POST_SCRIPTS: &[&str] = &["install", "postinstall", "prepare"];
+
+pub async fn run(cwd: &Path, frozen_lockfile: bool, ignore_scripts: bool) -> Result<()> {
     let manifest_path = cwd.join("package.json");
     let manifest = Manifest::read_from(&manifest_path)?;
     let node_modules = cwd.join("node_modules");
     let lock_path = cwd.join(LOCKFILE_NAME);
+    let bin_dir = node_modules.join(".bin");
 
-    let client = RegistryClient::with_default_registry()?;
+    let client = RegistryClient::from_npmrc(cwd)?;
     let roots: Vec<(String, String)> = manifest
         .all_dependencies()
         .map(|(k, v)| (k.clone(), v.clone()))
@@ -29,28 +36,39 @@ pub async fn run(cwd: &Path, frozen_lockfile: bool) -> Result<()> {
 
     let direct_dep_names: Vec<String> = roots.iter().map(|(n, _)| n.clone()).collect();
 
+    if !ignore_scripts {
+        run_root_scripts(cwd, &manifest, &bin_dir, ROOT_PRE_SCRIPTS)?;
+    }
+
     let existing_lock = if lock_path.exists() {
         Some(Lockfile::read_from(&lock_path)?)
     } else {
         None
     };
 
-    if frozen_lockfile {
+    let linked = if frozen_lockfile {
         let lock = existing_lock
             .as_ref()
             .ok_or(GurokuError::LockfileOutOfDate)?;
         if !lock_covers(lock, &roots) {
             return Err(GurokuError::LockfileOutOfDate);
         }
-        return install_from_lock(&client, lock, &node_modules, &direct_dep_names).await;
+        install_from_lock(&client, lock, &node_modules, &direct_dep_names).await?
+    } else {
+        tracing::info!("resolving {} root packages", roots.len());
+        let resolution = resolver::resolve(&client, &roots).await?;
+        tracing::info!("resolved {} packages", resolution.len());
+
+        let linked =
+            install_from_resolution(&client, &resolution, &node_modules, &direct_dep_names).await?;
+        write_lockfile(&resolution, &lock_path)?;
+        linked
+    };
+
+    if !ignore_scripts {
+        run_per_package_postinstall(&linked, &node_modules);
+        run_root_scripts(cwd, &manifest, &bin_dir, ROOT_POST_SCRIPTS)?;
     }
-
-    tracing::info!("resolving {} root packages", roots.len());
-    let resolution = resolver::resolve(&client, &roots).await?;
-    tracing::info!("resolved {} packages", resolution.len());
-
-    install_from_resolution(&client, &resolution, &node_modules, &direct_dep_names).await?;
-    write_lockfile(&resolution, &lock_path)?;
 
     tracing::info!("done");
     Ok(())
@@ -79,7 +97,7 @@ pub(crate) async fn install_from_resolution(
     resolution: &resolver::Resolution,
     node_modules: &Path,
     direct_deps: &[String],
-) -> Result<()> {
+) -> Result<Vec<linker::LinkedPackage>> {
     let items: Vec<crate::registry::VersionInfo> =
         resolution.iter().map(|(_, r)| r.info.clone()).collect();
 
@@ -115,7 +133,7 @@ pub(crate) async fn install_from_resolution(
 
     let linked = super::into_linked_packages(resolution, &cas_paths);
     linker::populate_node_modules(&linked, node_modules, direct_deps)?;
-    Ok(())
+    Ok(linked)
 }
 
 async fn install_from_lock(
@@ -123,7 +141,7 @@ async fn install_from_lock(
     lock: &Lockfile,
     node_modules: &Path,
     direct_deps: &[String],
-) -> Result<()> {
+) -> Result<Vec<linker::LinkedPackage>> {
     use crate::registry::{Dist, VersionInfo};
     use std::collections::BTreeMap;
     use url::Url;
@@ -166,22 +184,25 @@ async fn install_from_lock(
         cas_paths.insert(name, path);
     }
 
-    // Build LinkedPackage list straight from the lockfile.
     let mut linked = Vec::with_capacity(lock.packages.len());
     for (key, entry) in &lock.packages {
         let (name, version) = key.rsplit_once('@').unwrap();
         let Some(source_dir) = cas_paths.get(name) else {
             continue;
         };
+        let bin_entries = Manifest::read_from(&source_dir.join("package.json"))
+            .map(|m| m.bin_entries())
+            .unwrap_or_default();
         linked.push(linker::LinkedPackage {
             name: name.to_string(),
             version: version.to_string(),
             source_dir: source_dir.clone(),
             dependencies: entry.dependencies.clone(),
+            bin_entries,
         });
     }
     linker::populate_node_modules(&linked, node_modules, direct_deps)?;
-    Ok(())
+    Ok(linked)
 }
 
 pub(crate) fn write_lockfile(resolution: &resolver::Resolution, path: &Path) -> Result<()> {
@@ -195,4 +216,46 @@ pub(crate) fn write_lockfile(resolution: &resolver::Resolution, path: &Path) -> 
         lock.insert(name, &r.info.version, entry);
     }
     lock.write_to(path)
+}
+
+fn run_root_scripts(cwd: &Path, manifest: &Manifest, bin_dir: &Path, names: &[&str]) -> Result<()> {
+    for n in names {
+        if let Some(body) = manifest.scripts.get(*n) {
+            scripts::run_in(cwd, n, body, &[bin_dir])?;
+        }
+    }
+    Ok(())
+}
+
+/// Per-package `postinstall` scripts. Failures here are warnings — npm
+/// treats them as fatal by default but in v0.4 we err on the side of
+/// "install at least mostly succeeded" so the user can debug. Use
+/// `--ignore-scripts` to skip altogether.
+fn run_per_package_postinstall(packages: &[linker::LinkedPackage], node_modules: &Path) {
+    for pkg in packages {
+        let inner_pkg_dir = node_modules.join(".guroku").join(format!(
+            "{}@{}",
+            pkg.name.replace('/', "+"),
+            pkg.version
+        ));
+        let pkg_dir = inner_pkg_dir.join("node_modules").join(&pkg.name);
+        let manifest_path = pkg_dir.join("package.json");
+        let Ok(m) = Manifest::read_from(&manifest_path) else {
+            continue;
+        };
+        for hook in ["preinstall", "install", "postinstall"] {
+            if let Some(body) = m.scripts.get(hook) {
+                let bin = node_modules.join(".bin");
+                let inner_bin = inner_pkg_dir.join("node_modules").join(".bin");
+                if let Err(e) = scripts::run_in(
+                    &pkg_dir,
+                    &format!("{}@{} ({hook})", pkg.name, pkg.version),
+                    body,
+                    &[bin.as_path(), inner_bin.as_path()],
+                ) {
+                    tracing::warn!("{e}");
+                }
+            }
+        }
+    }
 }

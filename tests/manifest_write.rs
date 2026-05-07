@@ -71,10 +71,13 @@ fn roundtrip_preserves_unknown_fields() {
         reloaded.other.get("private"),
         Some(&serde_json::json!(true))
     );
-    let scripts = reloaded
-        .other
-        .get("scripts")
-        .expect("scripts field present");
-    assert_eq!(scripts.get("test").and_then(|v| v.as_str()), Some("jest"));
-    assert_eq!(scripts.get("build").and_then(|v| v.as_str()), Some("tsc"));
+    // v0.4 promoted `scripts` into a typed Manifest field; assert via that.
+    assert_eq!(
+        reloaded.scripts.get("test").map(String::as_str),
+        Some("jest")
+    );
+    assert_eq!(
+        reloaded.scripts.get("build").map(String::as_str),
+        Some("tsc")
+    );
 }

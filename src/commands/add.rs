@@ -14,7 +14,7 @@ pub async fn run(cwd: &Path, packages: &[String]) -> Result<()> {
     };
     let node_modules = cwd.join("node_modules");
     let lock_path = cwd.join(LOCKFILE_NAME);
-    let client = RegistryClient::with_default_registry()?;
+    let client = RegistryClient::from_npmrc(cwd)?;
 
     let mut new_entries: Vec<(String, String)> = Vec::with_capacity(packages.len());
     for spec_input in packages {
@@ -30,8 +30,13 @@ pub async fn run(cwd: &Path, packages: &[String]) -> Result<()> {
     let direct_dep_names: Vec<String> = roots.iter().map(|(n, _)| n.clone()).collect();
 
     let resolution = resolver::resolve(&client, &roots).await?;
-    super::install::install_from_resolution(&client, &resolution, &node_modules, &direct_dep_names)
-        .await?;
+    let _linked = super::install::install_from_resolution(
+        &client,
+        &resolution,
+        &node_modules,
+        &direct_dep_names,
+    )
+    .await?;
 
     for (name, _) in &new_entries {
         if let Some(r) = resolution.packages.get(name) {

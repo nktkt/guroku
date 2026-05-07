@@ -26,6 +26,7 @@ fn pkg(src_root: &Path, name: &str, version: &str, deps: &[(&str, &str)]) -> Lin
         version: version.to_string(),
         source_dir: make_pkg_src(src_root, name, version),
         dependencies,
+        bin_entries: vec![],
     }
 }
 

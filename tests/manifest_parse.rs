@@ -57,8 +57,11 @@ fn unknown_fields_land_in_other() {
         manifest.other.get("private"),
         Some(&serde_json::json!(true))
     );
+    // v0.4 promoted `scripts` into a real Manifest field, so it no longer
+    // lands in `other`. Confirm the new shape.
     assert_eq!(
-        manifest.other.get("scripts"),
-        Some(&serde_json::json!({"test":"echo"}))
+        manifest.scripts.get("test").map(String::as_str),
+        Some("echo")
     );
+    assert!(!manifest.other.contains_key("scripts"));
 }

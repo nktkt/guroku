@@ -16,8 +16,62 @@ pub struct Manifest {
     pub peer_dependencies: BTreeMap<String, String>,
     #[serde(default, rename = "optionalDependencies")]
     pub optional_dependencies: BTreeMap<String, String>,
+    #[serde(default)]
+    pub scripts: BTreeMap<String, String>,
+    #[serde(default)]
+    pub bin: Option<serde_json::Value>,
+    #[serde(default)]
+    pub workspaces: Option<serde_json::Value>,
     #[serde(flatten)]
     pub other: BTreeMap<String, serde_json::Value>,
+}
+
+impl Manifest {
+    /// Normalised list of `bin` entries: `Vec<(name, relative-path)>`.
+    /// Handles both forms — `"bin": "./cli.js"` (single, name from manifest)
+    /// and `"bin": { "name": "./cli.js" }`. Returns empty when absent.
+    pub fn bin_entries(&self) -> Vec<(String, String)> {
+        match &self.bin {
+            Some(serde_json::Value::String(p)) => match &self.name {
+                Some(n) => {
+                    let trimmed = n
+                        .strip_prefix('@')
+                        .and_then(|r| r.split_once('/'))
+                        .map(|(_, base)| base.to_string())
+                        .unwrap_or_else(|| n.clone());
+                    vec![(trimmed, p.clone())]
+                }
+                None => vec![],
+            },
+            Some(serde_json::Value::Object(o)) => o
+                .iter()
+                .filter_map(|(k, v)| v.as_str().map(|s| (k.clone(), s.to_string())))
+                .collect(),
+            _ => vec![],
+        }
+    }
+
+    /// Normalised list of workspace globs from `package.json#workspaces`.
+    /// Accepts the array form (`["packages/*"]`) and the pnpm-style object
+    /// form (`{ "packages": ["packages/*"] }`). Empty when absent.
+    pub fn workspace_globs(&self) -> Vec<String> {
+        match &self.workspaces {
+            Some(serde_json::Value::Array(a)) => a
+                .iter()
+                .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                .collect(),
+            Some(serde_json::Value::Object(o)) => o
+                .get("packages")
+                .and_then(|v| v.as_array())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                        .collect()
+                })
+                .unwrap_or_default(),
+            _ => vec![],
+        }
+    }
 }
 
 impl Manifest {

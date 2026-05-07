@@ -124,6 +124,11 @@ pub struct LinkedPackage {
     pub source_dir: PathBuf,
     /// Name → resolved exact version for this package's *own* deps.
     pub dependencies: BTreeMap<String, String>,
+    /// `bin` entries from this package's manifest: `(bin_name, relative_path)`.
+    /// Empty when the package declares no `bin` field. Used by v0.4 to
+    /// populate `node_modules/.bin/`.
+    #[doc(hidden)]
+    pub bin_entries: Vec<(String, String)>,
 }
 
 /// Populate `node_modules` with the strict pnpm-style layout for all of
@@ -204,7 +209,67 @@ pub fn populate_node_modules(
         symlink_file_or_dir(&target, &link_path)?;
     }
 
+    // 4. node_modules/.bin shims for direct-dep `bin` entries.
+    populate_bin_dir(packages, direct_deps, node_modules)?;
+
     Ok(())
+}
+
+/// Create `node_modules/.bin/<name>` symlinks pointing at each direct dep's
+/// declared `bin` script. v0.4 only shims direct deps' bins (not transitive
+/// — pnpm matches that policy).
+pub fn populate_bin_dir(
+    packages: &[LinkedPackage],
+    direct_deps: &[String],
+    node_modules: &Path,
+) -> Result<()> {
+    let bin_dir = node_modules.join(".bin");
+    let mut created_any = false;
+    let by_name: HashMap<&str, &LinkedPackage> =
+        packages.iter().map(|p| (p.name.as_str(), p)).collect();
+
+    for dep_name in direct_deps {
+        let Some(dep) = by_name.get(dep_name.as_str()) else {
+            continue;
+        };
+        if dep.bin_entries.is_empty() {
+            continue;
+        }
+        if !created_any {
+            fs::create_dir_all(&bin_dir).map_err(|e| GurokuError::Io {
+                path: bin_dir.clone(),
+                source: e,
+            })?;
+            created_any = true;
+        }
+        // Top-level symlink target for the package: relative from .bin/.
+        for (bin_name, rel_script) in &dep.bin_entries {
+            let link_path = bin_dir.join(bin_name);
+            ensure_clean_for_symlink(&link_path)?;
+            // The symlink target points at `<.guroku>/<id>/node_modules/<name>/<rel_script>`.
+            let pkg_root = node_modules
+                .join(".guroku")
+                .join(safe_pkg_id(&dep.name, &dep.version))
+                .join("node_modules");
+            let pkg_full = nested_pkg_path(&pkg_root, &dep.name).join(normalize_rel(rel_script));
+            let target = relative_to(&pkg_full, &bin_dir);
+            symlink_file_or_dir(&target, &link_path)?;
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                if let Ok(meta) = fs::metadata(&pkg_full) {
+                    let mut perms = meta.permissions();
+                    perms.set_mode(0o755);
+                    let _ = fs::set_permissions(&pkg_full, perms);
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn normalize_rel(rel: &str) -> &str {
+    rel.trim_start_matches("./").trim_start_matches('/')
 }
 
 /// Convert `@scope/name` into `@scope+name` for use inside `.guroku/`.

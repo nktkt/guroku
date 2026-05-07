@@ -30,6 +30,15 @@ impl RegistryClient {
         Self::new(Url::parse(DEFAULT_REGISTRY).expect("default registry url is valid"))
     }
 
+    /// Build a client honouring the `registry=` setting in `<cwd>/.npmrc`
+    /// or `~/.npmrc`. Falls back to `with_default_registry` when neither
+    /// file is present or sets `registry`.
+    pub fn from_npmrc(cwd: &std::path::Path) -> Result<Self> {
+        let rc = crate::npmrc::Npmrc::discover(cwd)?;
+        let url = Url::parse(rc.registry()).map_err(crate::error::GurokuError::from)?;
+        Self::new(url)
+    }
+
     /// Disable the on-disk ETag-aware metadata cache. Useful for tests.
     pub fn without_http_cache(mut self) -> Self {
         self.use_http_cache = false;

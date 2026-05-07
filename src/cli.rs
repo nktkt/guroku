@@ -27,6 +27,10 @@ pub enum Command {
         /// date with `package.json`.
         #[arg(long)]
         frozen_lockfile: bool,
+
+        /// Skip lifecycle scripts (`preinstall`, `postinstall`, etc.).
+        #[arg(long)]
+        ignore_scripts: bool,
     },
 
     /// Add one or more packages to `dependencies` and install them.
@@ -42,6 +46,27 @@ pub enum Command {
         #[arg(required = true)]
         packages: Vec<String>,
     },
+
+    /// Run a script defined in `package.json#scripts`.
+    Run {
+        /// Script name. With no name, lists available scripts.
+        name: Option<String>,
+        /// Trailing args forwarded to the script after `--`.
+        #[arg(last = true)]
+        args: Vec<String>,
+    },
+
+    /// Execute a binary that's already on PATH or under `node_modules/.bin/`.
+    Exec {
+        /// Command to run.
+        #[arg(required = true)]
+        command: String,
+        /// Args forwarded to the command.
+        args: Vec<String>,
+    },
+
+    /// List discovered workspace packages.
+    Workspaces,
 }
 
 impl Cli {

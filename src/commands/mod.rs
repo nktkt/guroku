@@ -1,9 +1,13 @@
 pub mod add;
+pub mod exec;
 pub mod install;
 pub mod remove;
+pub mod run;
+pub mod workspaces;
 
 use crate::error::{GurokuError, Result};
 use crate::linker::LinkedPackage;
+use crate::manifest::Manifest;
 use crate::registry::VersionInfo;
 use crate::{integrity, registry, store};
 use std::path::{Path, PathBuf};
@@ -31,7 +35,8 @@ pub(crate) async fn fetch_into_cas(
 }
 
 /// Translate a `Resolution` into the `Vec<LinkedPackage>` shape the linker
-/// wants, given a map from name → CAS dir.
+/// wants, given a map from name → CAS dir. Reads each package's manifest
+/// from disk to populate the `bin_entries` field used for `.bin/` shims.
 pub(crate) fn into_linked_packages(
     resolution: &crate::resolver::Resolution,
     cas_paths: &std::collections::HashMap<String, PathBuf>,
@@ -40,27 +45,28 @@ pub(crate) fn into_linked_packages(
         .iter()
         .filter_map(|(name, r)| {
             let source_dir = cas_paths.get(name)?.clone();
-            // For each declared dep, record the resolved exact version *if*
-            // it is in the resolution. (Peers and missing deps are dropped
-            // by the linker.)
             let mut deps = std::collections::BTreeMap::new();
             for dep_name in r.info.dependencies.keys() {
                 if let Some(rd) = resolution.packages.get(dep_name) {
                     deps.insert(dep_name.clone(), rd.info.version.clone());
                 }
             }
+            // Best-effort: read the bin field from the package's own
+            // installed package.json. Errors are demoted to "no bins."
+            let bin_entries = Manifest::read_from(&source_dir.join("package.json"))
+                .map(|m| m.bin_entries())
+                .unwrap_or_default();
             Some(LinkedPackage {
                 name: r.info.name.clone(),
                 version: r.info.version.clone(),
                 source_dir,
                 dependencies: deps,
+                bin_entries,
             })
         })
         .collect()
 }
 
-/// Touch any leftover store-dir layout from v0.1/v0.2 — currently a noop, but
-/// reserved as a hook for `guroku store gc` (v0.4).
 #[allow(dead_code)]
 pub(crate) fn ensure_store_dir(_root: &Path) -> Result<()> {
     Ok(())
