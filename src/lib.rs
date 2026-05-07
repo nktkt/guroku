@@ -8,6 +8,7 @@ pub mod cache;
 pub mod cli;
 pub mod commands;
 pub mod error;
+pub mod http_cache;
 pub mod integrity;
 pub mod linker;
 pub mod lockfile;
@@ -15,6 +16,7 @@ pub mod logging;
 pub mod manifest;
 pub mod registry;
 pub mod resolver;
+pub mod store;
 pub mod tarball;
 pub mod version;
 

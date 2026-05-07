@@ -1,4 +1,5 @@
 use crate::error::{GurokuError, Result};
+use crate::http_cache;
 use bytes::Bytes;
 use serde::Deserialize;
 use std::collections::BTreeMap;
@@ -10,6 +11,7 @@ pub const DEFAULT_REGISTRY: &str = "https://registry.npmjs.org";
 pub struct RegistryClient {
     base: Url,
     http: reqwest::Client,
+    use_http_cache: bool,
 }
 
 impl RegistryClient {
@@ -17,14 +19,73 @@ impl RegistryClient {
         let http = reqwest::Client::builder()
             .user_agent(concat!("guroku/", env!("CARGO_PKG_VERSION")))
             .build()?;
-        Ok(Self { base, http })
+        Ok(Self {
+            base,
+            http,
+            use_http_cache: true,
+        })
     }
 
     pub fn with_default_registry() -> Result<Self> {
         Self::new(Url::parse(DEFAULT_REGISTRY).expect("default registry url is valid"))
     }
 
+    /// Disable the on-disk ETag-aware metadata cache. Useful for tests.
+    pub fn without_http_cache(mut self) -> Self {
+        self.use_http_cache = false;
+        self
+    }
+
     pub async fn fetch_metadata(&self, name: &str) -> Result<PackageMetadata> {
+        let url = self.base.join(name)?;
+
+        // v0.3 ETag-aware cache: send If-None-Match if we have one cached.
+        let cached = if self.use_http_cache {
+            http_cache::read(name).ok().flatten()
+        } else {
+            None
+        };
+
+        let mut req = self.http.get(url);
+        if let Some(c) = &cached {
+            if let Some(etag) = &c.etag {
+                req = req.header(reqwest::header::IF_NONE_MATCH, etag);
+            }
+        }
+
+        let resp = req.send().await?;
+        let status = resp.status();
+
+        if status == reqwest::StatusCode::NOT_MODIFIED {
+            if let Some(c) = cached {
+                tracing::debug!("metadata cache hit (304) for {name}");
+                return parse_metadata_bytes(&c.body);
+            }
+            // The server says 304 but we have no cached body. Force a refetch.
+            return self.fetch_metadata_uncached(name).await;
+        }
+        if status == reqwest::StatusCode::NOT_FOUND {
+            return Err(GurokuError::PackageNotFound {
+                name: name.to_string(),
+            });
+        }
+        let resp = resp.error_for_status()?;
+        let etag = resp
+            .headers()
+            .get(reqwest::header::ETAG)
+            .and_then(|v| v.to_str().ok())
+            .map(|s| s.to_string());
+        let body = resp.bytes().await?;
+        let metadata = parse_metadata_bytes(&body)?;
+        if self.use_http_cache {
+            if let Err(e) = http_cache::write(name, &body, etag.as_deref()) {
+                tracing::debug!("failed to write metadata cache for {name}: {e}");
+            }
+        }
+        Ok(metadata)
+    }
+
+    async fn fetch_metadata_uncached(&self, name: &str) -> Result<PackageMetadata> {
         let url = self.base.join(name)?;
         let resp = self.http.get(url).send().await?;
         if resp.status() == reqwest::StatusCode::NOT_FOUND {
@@ -33,8 +94,8 @@ impl RegistryClient {
             });
         }
         let resp = resp.error_for_status()?;
-        let metadata: PackageMetadata = resp.json().await?;
-        Ok(metadata)
+        let body = resp.bytes().await?;
+        parse_metadata_bytes(&body)
     }
 
     pub async fn fetch_tarball(&self, url: &Url) -> Result<Bytes> {
@@ -46,6 +107,10 @@ impl RegistryClient {
             .error_for_status()?;
         Ok(resp.bytes().await?)
     }
+}
+
+fn parse_metadata_bytes(body: &[u8]) -> Result<PackageMetadata> {
+    serde_json::from_slice(body).map_err(GurokuError::from)
 }
 
 #[derive(Debug, Clone, Deserialize)]

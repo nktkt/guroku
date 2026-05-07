@@ -16,17 +16,10 @@ pub async fn run(cwd: &Path, packages: &[String]) -> Result<()> {
     let lock_path = cwd.join(LOCKFILE_NAME);
     let client = RegistryClient::with_default_registry()?;
 
-    // Stage the new specs onto the manifest first so the resolver sees them
-    // alongside the existing dependencies.
     let mut new_entries: Vec<(String, String)> = Vec::with_capacity(packages.len());
     for spec_input in packages {
         let (name, spec) = super::parse_spec(spec_input);
-        let spec_for_manifest = if spec == "latest" {
-            "latest".to_string()
-        } else {
-            spec.clone()
-        };
-        new_entries.push((name.clone(), spec_for_manifest));
+        new_entries.push((name.clone(), spec.clone()));
         manifest.add_dependency(&name, &spec);
     }
 
@@ -34,12 +27,12 @@ pub async fn run(cwd: &Path, packages: &[String]) -> Result<()> {
         .all_dependencies()
         .map(|(k, v)| (k.clone(), v.clone()))
         .collect();
+    let direct_dep_names: Vec<String> = roots.iter().map(|(n, _)| n.clone()).collect();
 
     let resolution = resolver::resolve(&client, &roots).await?;
-    super::install::install_from_resolution(&client, &resolution, &node_modules).await?;
+    super::install::install_from_resolution(&client, &resolution, &node_modules, &direct_dep_names)
+        .await?;
 
-    // Replace each just-added spec with the caret-pinned resolved version,
-    // matching npm's "guess the user wanted ^X" behaviour.
     for (name, _) in &new_entries {
         if let Some(r) = resolution.packages.get(name) {
             manifest.add_dependency(name, &format!("^{}", r.info.version));

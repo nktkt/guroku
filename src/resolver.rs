@@ -52,15 +52,24 @@ impl Resolution {
 /// Resolve a set of root requests into a flat package set.
 ///
 /// `roots` is the list of `(name, range_spec)` pairs from `package.json`.
+///
+/// Network behaviour: we prefetch the metadata for every root name in
+/// parallel before starting the BFS, then fetch transitive metadata one
+/// name at a time. Most of the wall-clock saving comes from the prefetch:
+/// `package.json` typically declares 5-30 roots, and serialising those
+/// requests is the slowest single step in the install pipeline.
 pub async fn resolve(client: &RegistryClient, roots: &[(String, String)]) -> Result<Resolution> {
     let mut chosen: HashMap<String, (Version, VersionInfo)> = HashMap::new();
-    let mut metadata_cache: HashMap<String, PackageMetadata> = HashMap::new();
     let mut queue: VecDeque<(String, Range, Option<String>)> = VecDeque::new();
 
     for (name, spec) in roots {
         let range = parse_range_for(name, spec)?;
         queue.push_back((name.clone(), range, None));
     }
+
+    // Warm the per-resolve metadata cache with the root names in parallel.
+    let root_names: Vec<String> = roots.iter().map(|(n, _)| n.clone()).collect();
+    let mut metadata_cache = prefetch(client, &root_names).await.unwrap_or_default();
 
     while let Some((name, range, requested_by)) = queue.pop_front() {
         // If we've already chosen a version for this name, just check

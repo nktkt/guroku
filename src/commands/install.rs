@@ -1,10 +1,12 @@
 use crate::error::{GurokuError, Result};
+use crate::linker;
 use crate::lockfile::{Lockfile, PackageLock, LOCKFILE_NAME};
 use crate::manifest::Manifest;
 use crate::registry::RegistryClient;
 use crate::resolver;
 use futures::stream::{self, StreamExt};
-use std::path::Path;
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 
 const CONCURRENCY: usize = 8;
 
@@ -25,6 +27,8 @@ pub async fn run(cwd: &Path, frozen_lockfile: bool) -> Result<()> {
         return Ok(());
     }
 
+    let direct_dep_names: Vec<String> = roots.iter().map(|(n, _)| n.clone()).collect();
+
     let existing_lock = if lock_path.exists() {
         Some(Lockfile::read_from(&lock_path)?)
     } else {
@@ -38,14 +42,14 @@ pub async fn run(cwd: &Path, frozen_lockfile: bool) -> Result<()> {
         if !lock_covers(lock, &roots) {
             return Err(GurokuError::LockfileOutOfDate);
         }
-        return install_from_lock(&client, lock, &node_modules).await;
+        return install_from_lock(&client, lock, &node_modules, &direct_dep_names).await;
     }
 
     tracing::info!("resolving {} root packages", roots.len());
     let resolution = resolver::resolve(&client, &roots).await?;
     tracing::info!("resolved {} packages", resolution.len());
 
-    install_from_resolution(&client, &resolution, &node_modules).await?;
+    install_from_resolution(&client, &resolution, &node_modules, &direct_dep_names).await?;
     write_lockfile(&resolution, &lock_path)?;
 
     tracing::info!("done");
@@ -53,9 +57,6 @@ pub async fn run(cwd: &Path, frozen_lockfile: bool) -> Result<()> {
 }
 
 fn lock_covers(lock: &Lockfile, roots: &[(String, String)]) -> bool {
-    // The lockfile must contain at least one entry whose name matches each
-    // declared root. A more precise check would re-resolve and compare; this
-    // is the cheap version.
     for (name, _) in roots {
         let mut found = false;
         for key in lock.packages.keys() {
@@ -77,33 +78,43 @@ pub(crate) async fn install_from_resolution(
     client: &RegistryClient,
     resolution: &resolver::Resolution,
     node_modules: &Path,
+    direct_deps: &[String],
 ) -> Result<()> {
     let items: Vec<crate::registry::VersionInfo> =
         resolution.iter().map(|(_, r)| r.info.clone()).collect();
 
-    let results: Vec<Result<()>> = stream::iter(items)
+    let cas_results: Vec<Result<(String, PathBuf)>> = stream::iter(items)
         .map(|info| {
             let client = client.clone();
-            let node_modules = node_modules.to_path_buf();
-            async move { super::install_version(&client, &info, &node_modules).await }
+            async move {
+                let path = super::fetch_into_cas(&client, &info).await?;
+                Ok((info.name.clone(), path))
+            }
         })
         .buffer_unordered(CONCURRENCY)
         .collect()
         .await;
 
+    let mut cas_paths: HashMap<String, PathBuf> = HashMap::new();
     let mut failures = Vec::new();
-    for r in results {
-        if let Err(e) = r {
-            failures.push(e.to_string());
+    for r in cas_results {
+        match r {
+            Ok((name, path)) => {
+                cas_paths.insert(name, path);
+            }
+            Err(e) => failures.push(e.to_string()),
         }
     }
     if !failures.is_empty() {
         return Err(GurokuError::Other(format!(
-            "{} package(s) failed to install: {}",
+            "{} package(s) failed to download: {}",
             failures.len(),
             failures.join("; ")
         )));
     }
+
+    let linked = super::into_linked_packages(resolution, &cas_paths);
+    linker::populate_node_modules(&linked, node_modules, direct_deps)?;
     Ok(())
 }
 
@@ -111,12 +122,14 @@ async fn install_from_lock(
     client: &RegistryClient,
     lock: &Lockfile,
     node_modules: &Path,
+    direct_deps: &[String],
 ) -> Result<()> {
     use crate::registry::{Dist, VersionInfo};
     use std::collections::BTreeMap;
     use url::Url;
 
     let mut items: Vec<VersionInfo> = Vec::with_capacity(lock.packages.len());
+    let mut declared_deps: HashMap<String, BTreeMap<String, String>> = HashMap::new();
     for (key, entry) in &lock.packages {
         let (name, version) = key
             .rsplit_once('@')
@@ -132,21 +145,42 @@ async fn install_from_lock(
             },
             dependencies: BTreeMap::new(),
         });
+        declared_deps.insert(name.to_string(), entry.dependencies.clone());
     }
 
-    let results: Vec<Result<()>> = stream::iter(items)
+    let cas_results: Vec<Result<(String, PathBuf)>> = stream::iter(items)
         .map(|info| {
             let client = client.clone();
-            let node_modules = node_modules.to_path_buf();
-            async move { super::install_version(&client, &info, &node_modules).await }
+            async move {
+                let path = super::fetch_into_cas(&client, &info).await?;
+                Ok((info.name.clone(), path))
+            }
         })
         .buffer_unordered(CONCURRENCY)
         .collect()
         .await;
 
-    for r in results {
-        r?;
+    let mut cas_paths: HashMap<String, PathBuf> = HashMap::new();
+    for r in cas_results {
+        let (name, path) = r?;
+        cas_paths.insert(name, path);
     }
+
+    // Build LinkedPackage list straight from the lockfile.
+    let mut linked = Vec::with_capacity(lock.packages.len());
+    for (key, entry) in &lock.packages {
+        let (name, version) = key.rsplit_once('@').unwrap();
+        let Some(source_dir) = cas_paths.get(name) else {
+            continue;
+        };
+        linked.push(linker::LinkedPackage {
+            name: name.to_string(),
+            version: version.to_string(),
+            source_dir: source_dir.clone(),
+            dependencies: entry.dependencies.clone(),
+        });
+    }
+    linker::populate_node_modules(&linked, node_modules, direct_deps)?;
     Ok(())
 }
 
