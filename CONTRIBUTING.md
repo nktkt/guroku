@@ -174,12 +174,6 @@ PRs that try to add these capabilities will be closed. Tooling that lives
 *alongside* a package manager (workspaces, scripts, lifecycle hooks) is in
 scope; tooling that *replaces* a separate ecosystem tool is not.
 
-## Code of conduct
-
-Participation in this project is governed by the
-[Code of Conduct](CODE_OF_CONDUCT.md). By contributing, you agree to abide
-by its terms.
-
 ## Security
 
 Please do **not** report security vulnerabilities through public GitHub
