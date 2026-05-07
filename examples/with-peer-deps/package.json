@@ -1,0 +1,23 @@
+{
+  "name": "guroku-example-with-peer-deps",
+  "version": "0.1.0",
+  "description": "Example project demonstrating peerDependencies handling in guroku v0.2.",
+  "private": true,
+  "license": "MIT",
+  "main": "index.js",
+  "dependencies": {
+    "ms": "^2.1.0"
+  },
+  "peerDependencies": {
+    "react": "^17.0.0 || ^18.0.0",
+    "react-dom": "^17.0.0 || ^18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react-dom": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "is-odd": "^3.0.0"
+  }
+}

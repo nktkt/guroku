@@ -1,0 +1,63 @@
+title: "Idea: "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to share an idea for guroku!
+
+        Before posting, please skim the roadmap section in the README and
+        the dedicated `ROADMAP.md` file to see whether this idea is already
+        planned, in progress, or has been considered and rejected. If it
+        is already covered there, a thumbs-up reaction on the existing
+        item is more useful than a new discussion.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem this would solve
+      description: What use case or pain point is this idea about? Describe the situation a user runs into today and why the current behavior is not enough.
+      placeholder: When I run `guroku install` in a monorepo, I want to ...
+    validations:
+      required: true
+  - type: textarea
+    id: approach
+    attributes:
+      label: Sketch of an approach
+      description: Rough notes on how this might work. Pseudo-code, CLI examples, or config snippets are all fine. It does not need to be a finished design.
+      placeholder: |
+        # rough idea
+        guroku install --frozen-lockfile
+        # behavior: refuse to update the lockfile, exit non-zero on drift
+    validations:
+      required: false
+  - type: dropdown
+    id: milestone
+    attributes:
+      label: Which milestone do you think this fits?
+      description: A rough guess is fine. The maintainer may move it.
+      options:
+        - "v0.2 followups"
+        - "v0.3 (storage / hardlinks)"
+        - "v0.4 (scripts / workspaces)"
+        - "v0.5 (registries / auth)"
+        - "v1.0 (stability)"
+        - "Future / not sure"
+    validations:
+      required: false
+  - type: checkboxes
+    id: compatibility
+    attributes:
+      label: Compatibility
+      options:
+        - label: I understand guroku is pre-1.0 and the maintainer may decide this isn't a good fit.
+          required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Links to npm, pnpm, or bun documentation, papers, RFCs, blog posts, or prior art that informed this idea.
+      placeholder: |
+        - https://docs.npmjs.com/cli/...
+        - https://pnpm.io/...
+    validations:
+      required: false

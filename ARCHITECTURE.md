@@ -3,9 +3,16 @@
 This document describes the internal organisation of `guroku`, a Rust-based,
 npm-style package manager. It is aimed at contributors and at readers who want
 to understand the codebase before changing it. It is deliberately concrete: it
-describes what the v0.1 code actually does, not what an idealised package
-manager should do. Where the implementation takes a short-cut, that short-cut
-is named explicitly and pointed at the roadmap entry that supersedes it.
+describes what the code actually does, not what an idealised package manager
+should do. Where the implementation takes a short-cut, that short-cut is named
+explicitly and pointed at the roadmap entry that supersedes it.
+
+> **Document status:** the prose below was first written for v0.1 and
+> generally still applies to v0.2. v0.2 added three new modules — `version`,
+> `resolver`, `lockfile` — and replaced `PackageMetadata::resolve`'s
+> "fall back to latest" stub with proper npm semver. For the resolver
+> internals, see `docs/internals/algorithm-notes.md`. For the lockfile
+> format, see `docs/internals/lockfile.md` and `docs/lockfile-format.md`.
 
 If you are looking for user-facing documentation, see `README.md`. If you are
 looking for the public Rust API, see the re-exports in `src/lib.rs`.

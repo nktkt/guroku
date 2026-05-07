@@ -1,0 +1,25 @@
+{
+  "lockfileVersion": 1,
+  "generatedBy": "guroku 0.2.0",
+  "packages": {
+    "a@1.0.0": {
+      "resolved": "https://registry.npmjs.org/a/-/a-1.0.0.tgz",
+      "integrity": "sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+      "dependencies": {
+        "b": "1.0.0"
+      }
+    },
+    "b@1.0.0": {
+      "resolved": "https://registry.npmjs.org/b/-/b-1.0.0.tgz",
+      "integrity": "sha512-BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB==",
+      "dependencies": {
+        "c": "1.0.0"
+      }
+    },
+    "c@1.0.0": {
+      "resolved": "https://registry.npmjs.org/c/-/c-1.0.0.tgz",
+      "integrity": "sha512-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC==",
+      "dependencies": {}
+    }
+  }
+}

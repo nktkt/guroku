@@ -1,0 +1,170 @@
+{
+  "name": "demo",
+  "dist-tags": {
+    "latest": "2.5.5",
+    "next": "3.0.0",
+    "legacy": "1.99.0"
+  },
+  "versions": {
+    "0.1.0": {
+      "name": "demo",
+      "version": "0.1.0",
+      "dependencies": {},
+      "dist": {
+        "tarball": "https://registry.npmjs.org/demo/-/demo-0.1.0.tgz",
+        "integrity": "sha512-A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1p2q3r4s5t6u7v8w9x0y1z2A3B4C5D6E7F8G9H0I1==",
+        "shasum": "0a1b2c3d4e5f60718293a4b5c6d7e8f901020304"
+      }
+    },
+    "0.5.0": {
+      "name": "demo",
+      "version": "0.5.0",
+      "dependencies": {},
+      "dist": {
+        "tarball": "https://registry.npmjs.org/demo/-/demo-0.5.0.tgz",
+        "integrity": "sha512-B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1p2q3r4s5t6u7v8w9x0y1z2A3B4C5D6E7F8G9H0I1J2==",
+        "shasum": "1b2c3d4e5f60718293a4b5c6d7e8f9010203040a"
+      }
+    },
+    "0.9.9": {
+      "name": "demo",
+      "version": "0.9.9",
+      "dependencies": {},
+      "dist": {
+        "tarball": "https://registry.npmjs.org/demo/-/demo-0.9.9.tgz",
+        "integrity": "sha512-C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1p2q3r4s5t6u7v8w9x0y1z2A3B4C5D6E7F8G9H0I1J2K3==",
+        "shasum": "2c3d4e5f60718293a4b5c6d7e8f9010203040a1b"
+      }
+    },
+    "1.0.0": {
+      "name": "demo",
+      "version": "1.0.0",
+      "dependencies": {},
+      "dist": {
+        "tarball": "https://registry.npmjs.org/demo/-/demo-1.0.0.tgz",
+        "integrity": "sha512-D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1p2q3r4s5t6u7v8w9x0y1z2A3B4C5D6E7F8G9H0I1J2K3L4==",
+        "shasum": "3d4e5f60718293a4b5c6d7e8f9010203040a1b2c"
+      }
+    },
+    "1.0.5": {
+      "name": "demo",
+      "version": "1.0.5",
+      "dependencies": {},
+      "dist": {
+        "tarball": "https://registry.npmjs.org/demo/-/demo-1.0.5.tgz",
+        "integrity": "sha512-E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1p2q3r4s5t6u7v8w9x0y1z2A3B4C5D6E7F8G9H0I1J2K3L4M5==",
+        "shasum": "4e5f60718293a4b5c6d7e8f9010203040a1b2c3d"
+      }
+    },
+    "1.2.0": {
+      "name": "demo",
+      "version": "1.2.0",
+      "dependencies": {},
+      "dist": {
+        "tarball": "https://registry.npmjs.org/demo/-/demo-1.2.0.tgz",
+        "integrity": "sha512-F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1p2q3r4s5t6u7v8w9x0y1z2A3B4C5D6E7F8G9H0I1J2K3L4M5N6==",
+        "shasum": "5f60718293a4b5c6d7e8f9010203040a1b2c3d4e"
+      }
+    },
+    "1.2.3": {
+      "name": "demo",
+      "version": "1.2.3",
+      "dependencies": {},
+      "dist": {
+        "tarball": "https://registry.npmjs.org/demo/-/demo-1.2.3.tgz",
+        "integrity": "sha512-G7H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1p2q3r4s5t6u7v8w9x0y1z2A3B4C5D6E7F8G9H0I1J2K3L4M5N6O7==",
+        "shasum": "60718293a4b5c6d7e8f9010203040a1b2c3d4e5f"
+      }
+    },
+    "1.5.0": {
+      "name": "demo",
+      "version": "1.5.0",
+      "dependencies": {},
+      "dist": {
+        "tarball": "https://registry.npmjs.org/demo/-/demo-1.5.0.tgz",
+        "integrity": "sha512-H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1p2q3r4s5t6u7v8w9x0y1z2A3B4C5D6E7F8G9H0I1J2K3L4M5N6O7P8==",
+        "shasum": "718293a4b5c6d7e8f9010203040a1b2c3d4e5f60"
+      }
+    },
+    "1.99.0": {
+      "name": "demo",
+      "version": "1.99.0",
+      "dependencies": {},
+      "dist": {
+        "tarball": "https://registry.npmjs.org/demo/-/demo-1.99.0.tgz",
+        "integrity": "sha512-I9J0K1L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1p2q3r4s5t6u7v8w9x0y1z2A3B4C5D6E7F8G9H0I1J2K3L4M5N6O7P8Q9==",
+        "shasum": "8293a4b5c6d7e8f9010203040a1b2c3d4e5f6071"
+      }
+    },
+    "2.0.0-alpha.1": {
+      "name": "demo",
+      "version": "2.0.0-alpha.1",
+      "dependencies": {},
+      "dist": {
+        "tarball": "https://registry.npmjs.org/demo/-/demo-2.0.0-alpha.1.tgz",
+        "integrity": "sha512-J0K1L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1p2q3r4s5t6u7v8w9x0y1z2A3B4C5D6E7F8G9H0I1J2K3L4M5N6O7P8Q9R0==",
+        "shasum": "93a4b5c6d7e8f9010203040a1b2c3d4e5f607182"
+      }
+    },
+    "2.0.0-beta.1": {
+      "name": "demo",
+      "version": "2.0.0-beta.1",
+      "dependencies": {},
+      "dist": {
+        "tarball": "https://registry.npmjs.org/demo/-/demo-2.0.0-beta.1.tgz",
+        "integrity": "sha512-K1L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1p2q3r4s5t6u7v8w9x0y1z2A3B4C5D6E7F8G9H0I1J2K3L4M5N6O7P8Q9R0S1==",
+        "shasum": "a4b5c6d7e8f9010203040a1b2c3d4e5f60718293"
+      }
+    },
+    "2.0.0-rc.1": {
+      "name": "demo",
+      "version": "2.0.0-rc.1",
+      "dependencies": {},
+      "dist": {
+        "tarball": "https://registry.npmjs.org/demo/-/demo-2.0.0-rc.1.tgz",
+        "integrity": "sha512-L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1p2q3r4s5t6u7v8w9x0y1z2A3B4C5D6E7F8G9H0I1J2K3L4M5N6O7P8Q9R0S1T2==",
+        "shasum": "b5c6d7e8f9010203040a1b2c3d4e5f6071829304"
+      }
+    },
+    "2.0.0": {
+      "name": "demo",
+      "version": "2.0.0",
+      "dependencies": {},
+      "dist": {
+        "tarball": "https://registry.npmjs.org/demo/-/demo-2.0.0.tgz",
+        "integrity": "sha512-M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1p2q3r4s5t6u7v8w9x0y1z2A3B4C5D6E7F8G9H0I1J2K3L4M5N6O7P8Q9R0S1T2U3==",
+        "shasum": "c6d7e8f9010203040a1b2c3d4e5f607182930415"
+      }
+    },
+    "2.1.0": {
+      "name": "demo",
+      "version": "2.1.0",
+      "dependencies": {},
+      "dist": {
+        "tarball": "https://registry.npmjs.org/demo/-/demo-2.1.0.tgz",
+        "integrity": "sha512-N4O5P6Q7R8S9T0U1V2W3X4Y5Z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1p2q3r4s5t6u7v8w9x0y1z2A3B4C5D6E7F8G9H0I1J2K3L4M5N6O7P8Q9R0S1T2U3V4==",
+        "shasum": "d7e8f9010203040a1b2c3d4e5f60718293041526"
+      }
+    },
+    "2.5.5": {
+      "name": "demo",
+      "version": "2.5.5",
+      "dependencies": {},
+      "dist": {
+        "tarball": "https://registry.npmjs.org/demo/-/demo-2.5.5.tgz",
+        "integrity": "sha512-O5P6Q7R8S9T0U1V2W3X4Y5Z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1p2q3r4s5t6u7v8w9x0y1z2A3B4C5D6E7F8G9H0I1J2K3L4M5N6O7P8Q9R0S1T2U3V4W5==",
+        "shasum": "e8f9010203040a1b2c3d4e5f6071829304152637"
+      }
+    },
+    "3.0.0": {
+      "name": "demo",
+      "version": "3.0.0",
+      "dependencies": {},
+      "dist": {
+        "tarball": "https://registry.npmjs.org/demo/-/demo-3.0.0.tgz",
+        "integrity": "sha512-P6Q7R8S9T0U1V2W3X4Y5Z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1p2q3r4s5t6u7v8w9x0y1z2A3B4C5D6E7F8G9H0I1J2K3L4M5N6O7P8Q9R0S1T2U3V4W5X6==",
+        "shasum": "f9010203040a1b2c3d4e5f607182930415263748"
+      }
+    }
+  }
+}

@@ -1,9 +1,15 @@
-# guroku CLI Reference (v0.1)
+# guroku CLI Reference
 
 `guroku` is an npm-style package manager written in Rust. This document
-describes the v0.1 command-line surface: every flag, every subcommand,
+describes the current command-line surface: every flag, every subcommand,
 their inputs and outputs, and the limitations you should expect at this
 stage of the project.
+
+> **v0.2 changes:** `install` gained a `--frozen-lockfile` flag for CI;
+> range specs (`^1.2.3`, `~1.0`, `1.x`, `^1 || ^2`) now resolve correctly
+> instead of silently falling back to `latest`; every install reads and
+> writes `guroku.lock`. See `docs/migration/v0.1-to-v0.2.md` if you're
+> upgrading from v0.1.
 
 ## Synopsis
 

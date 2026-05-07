@@ -1,0 +1,12 @@
+{
+  "name": "guroku-example-with-lockfile",
+  "version": "0.1.0",
+  "description": "Example project demonstrating guroku.lock and --frozen-lockfile.",
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "lodash": "^4.17.0",
+    "is-odd": "^3.0.0",
+    "ms": "^2.1.0"
+  }
+}

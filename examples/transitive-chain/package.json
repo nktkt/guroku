@@ -1,0 +1,10 @@
+{
+  "name": "guroku-example-transitive-chain",
+  "version": "0.1.0",
+  "description": "Example: a single top-level dependency that pulls a chain of transitive packages.",
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "is-odd": "^3.0.0"
+  }
+}

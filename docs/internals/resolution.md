@@ -6,10 +6,22 @@ concrete published version that can be downloaded and installed.
 
 It is aimed at contributors working on the resolver, not end users.
 
-## 1. Status
+> **Document status:** this page was originally written for v0.1, where
+> resolution was a deliberate stub. v0.2 ships a real resolver. The most
+> up-to-date sources are:
+>
+> - `docs/internals/algorithm-notes.md` — what the v0.2 resolver does, and what PubGrub will give us in v0.3.
+> - `docs/internals/semver.md` — the npm semver dialect we accept.
+> - `docs/internals/dependency-graph.md` — graph-shape reference and worked examples.
+>
+> The "Status" section below describes the v0.1 stub for historical context;
+> the rest of this page is largely accurate for v0.2 once you mentally
+> substitute "v0.1 stub" with "v0.2 BFS resolver".
 
-guroku v0.1 has **no real resolver**. What exists today is a deliberate stub
-whose only job is to let the rest of the install pipeline (registry fetch,
+## 1. Status (v0.1, retained for history — see note above)
+
+guroku v0.1 had **no real resolver**. What existed in that release was a deliberate stub
+whose only job was to let the rest of the install pipeline (registry fetch,
 tarball download, extraction, linking, lockfile write) be exercised
 end-to-end on real packages.
 

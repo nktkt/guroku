@@ -1,0 +1,40 @@
+# This workflow guards Cargo.toml's `rust-version` setting.
+# If you bump MSRV, update both Cargo.toml AND the toolchain reference below.
+
+name: msrv
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # MSRV is hard-coded here; it MUST stay in sync with `rust-version`
+      # in Cargo.toml. If you change one, change the other.
+      - name: Install Rust 1.75 (MSRV)
+        uses: dtolnay/rust-toolchain@1.75
+
+      - name: Cache cargo artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: msrv-1.75
+
+      - name: Build (lib/bins)
+        run: cargo build --verbose --locked
+
+      - name: Build (tests)
+        run: cargo build --tests --verbose --locked

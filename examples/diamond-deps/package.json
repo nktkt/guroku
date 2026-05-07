@@ -1,0 +1,11 @@
+{
+  "name": "guroku-example-diamond-deps",
+  "version": "0.1.0",
+  "description": "Example: two top-level deps that transitively share a common package (the 'diamond' pattern).",
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "supports-color": "^9.0.0",
+    "ansi-styles": "^6.0.0"
+  }
+}

@@ -4,7 +4,7 @@
 
 `guroku` is an experimental package manager inspired by [npm](https://www.npmjs.com/), [pnpm](https://pnpm.io/), and [bun](https://bun.sh/), built from scratch in Rust. The goal is to combine pnpm's content-addressable storage model with bun's installation speed, while staying small, hackable, and easy to read.
 
-> **Status:** pre-alpha. Nothing works yet. This repository tracks the design and roadmap.
+> **Status:** v0.2 ships an end-to-end install path with a real semver-aware resolver and a committed `guroku.lock`. Storage is still a flat copy (CAS + hardlinks land in v0.3), and lifecycle scripts / workspaces are not yet supported. Pre-alpha; expect rough edges.
 
 ---
 
@@ -49,20 +49,20 @@
 
 ## Roadmap
 
-### v0.1 — "It installs something"
-- [ ] CLI skeleton (`guroku install`, `guroku add`, `guroku remove`)
-- [ ] `package.json` parser
-- [ ] npm registry client (metadata + tarball download)
-- [ ] Tarball extraction (`.tgz` → store)
-- [ ] Naive flat `node_modules` writer
-- [ ] SHA-512 integrity verification
+### v0.1 — "It installs something" *(shipped 2026-05-06)*
+- [x] CLI skeleton (`guroku install`, `guroku add`, `guroku remove`)
+- [x] `package.json` parser
+- [x] npm registry client (metadata + tarball download)
+- [x] Tarball extraction (`.tgz` → store)
+- [x] Naive flat `node_modules` writer
+- [x] SHA-512 integrity verification
 
-### v0.2 — "It resolves correctly"
-- [ ] Semver constraint parser
-- [ ] PubGrub-based dependency resolver
-- [ ] `guroku.lock` writer/reader
-- [ ] Frozen-lockfile mode (`--frozen-lockfile`)
-- [ ] Dev / peer / optional dependency handling
+### v0.2 — "It resolves correctly" *(shipped 2026-05-06)*
+- [x] Semver constraint parser (via `node-semver`)
+- [x] Dependency resolver (BFS sticky-first; PubGrub-based variant deferred to v0.3 — see `docs/internals/algorithm-notes.md`)
+- [x] `guroku.lock` writer/reader
+- [x] Frozen-lockfile mode (`--frozen-lockfile`)
+- [x] Dev dependency handling; peer / optional fields are read and round-tripped (auto-install lands in v0.4)
 
 ### v0.3 — "It's fast"
 - [ ] Global content-addressable store at `~/.guroku/store`

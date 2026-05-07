@@ -1,0 +1,15 @@
+{
+  "name": "watcher-app",
+  "version": "1.0.0",
+  "description": "Fixture: an app with platform-specific optional deps.",
+  "license": "MIT",
+  "dependencies": {
+    "chokidar": "3.6.0"
+  },
+  "optionalDependencies": {
+    "fsevents": "^2.3.3"
+  },
+  "devDependencies": {
+    "vitest": "^1.6.0"
+  }
+}

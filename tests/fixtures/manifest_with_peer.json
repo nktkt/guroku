@@ -1,0 +1,22 @@
+{
+  "name": "fancy-ui-kit",
+  "version": "0.3.0",
+  "description": "Fixture: a UI lib that peer-depends on react.",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "dependencies": {
+    "tslib": "^2.6.0"
+  },
+  "peerDependencies": {
+    "react": "^17.0.0 || ^18.0.0",
+    "react-dom": "^17.0.0 || ^18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react-dom": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}
