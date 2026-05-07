@@ -1,0 +1,13 @@
+{
+  "name": "guroku-example-monorepo",
+  "version": "0.1.0",
+  "description": "Example monorepo demonstrating guroku v0.4's workspace discovery.",
+  "private": true,
+  "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "list-workspaces": "guroku workspaces"
+  }
+}

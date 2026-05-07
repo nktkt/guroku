@@ -1,0 +1,135 @@
+guroku v0.4 :: install pipeline (lifecycle hooks added)
+================================================================
+
+           +--------------------------+
+           |    `guroku install`      |
+           |    (commands::install)   |
+           +-------------+------------+
+                         |
+                         v
+           +--------------------------+
+           | 1. read package.json     |
+           |    Manifest::read_from   |
+           +-------------+------------+
+                         |
+                         v
+           +--------------------------+
+           | 2. parse roots into      |
+           |    (name, range) pairs   |
+           +-------------+------------+
+                         |
+                         v
+           +--------------------------+
+           | 3. read guroku.lock      |
+           |    (if present)          |
+           +-------------+------------+
+                         |
+                         v
+                  < --ignore-scripts? >
+                  /                  \
+              YES /                    \ NO
+                 |                      |
+                 |   (skip ALL hook     |
+                 |    boxes marked *)   |
+                 |                      v
+                 |       +--------------------------+
+                 |       | 4. * ROOT preinstall     |
+                 |       |      hook (scripts)      |
+                 |       +-------------+------------+
+                 |                     |
+                 +---------+-----------+
+                           |
+                           v
+                  < --frozen-lockfile? >
+                  /                    \
+              YES /                      \ NO
+                 v                        v
+   +-----------------------+   +--------------------------+
+   | 5a. install_from_lock |   | 5b. resolver::resolve    |
+   |     (skip resolution) |   |--------------------------|
+   +-----------+-----------+   | - prefetch root metadata |
+               |               |   in parallel            |
+               |               |   (FuturesUnordered)     |
+               |               | - BFS over deps          |
+               |               | - max_satisfying picks   |
+               |               +-------------+------------+
+               |                             |
+               |                             v
+               |               +--------------------------+
+               |               | 6. write guroku.lock     |
+               |               |    Lockfile::write_to    |
+               |               |    (skipped if frozen)   |
+               |               +-------------+------------+
+               |                             |
+               +--------------+--------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 7. parallel CAS pipeline            |
+           |    (concurrency = 8)                |
+           |-------------------------------------|
+           | - fetch tarball (registry)          |
+           | - verify SHA-512 (store)            |
+           | - extract into ~/.guroku/cas/       |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 8. linker::populate_node_modules    |
+           |-------------------------------------|
+           | - mkdir node_modules/.guroku        |
+           | - hardlinks: CAS -->                |
+           |     .guroku/<name>@<ver>/           |
+           |       node_modules/<name>           |
+           | - sibling symlinks for each         |
+           |   package's deps                    |
+           | - top-level surface symlinks for    |
+           |   direct deps                       |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 9. linker::populate_bin_dir         |
+           |    node_modules/.bin/<name> shims   |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 10. * PER-PKG lifecycle hooks       |
+           |     preinstall / install /          |
+           |     postinstall (scripts)           |
+           |     best-effort, warn-on-fail       |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 11. * ROOT install hook (scripts)   |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 12. * ROOT postinstall hook         |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 13. * ROOT prepare hook             |
+           +------------------+------------------+
+                              |
+                              v
+                  +-----------------------+
+                  | populated node_modules|
+                  +-----------------------+
+
+  (*) boxes are skipped entirely when --ignore-scripts is set.
+
+----------------------------------------------------------------
+Legend (module : filename)
+  commands::install : src/commands/install.rs
+  resolver          : src/resolver.rs
+  registry          : src/registry.rs
+  store             : src/store.rs
+  linker            : src/linker.rs
+  scripts           : src/scripts.rs
+  lockfile          : src/lockfile.rs
+  manifest          : src/manifest.rs

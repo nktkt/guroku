@@ -1,0 +1,15 @@
+# Sample .npmrc consumed by guroku v0.4's parser.
+# See docs/npmrc.md for what each line means.
+
+; Default registry
+registry=https://registry.npmjs.org
+
+; Override for the @acme scope (corp internal)
+@acme:registry=https://npm.acme.internal
+
+; Auth token for the corp registry (read but unused in v0.4 — v0.5 wires it up)
+//npm.acme.internal/:_authToken=hunter2-redacted
+
+; Things guroku v0.4 does NOT yet honour (logged at debug):
+strict-ssl=true
+save-exact=true

@@ -1,0 +1,7 @@
+{
+  "name": "@guroku-example/util",
+  "version": "0.1.0",
+  "description": "Small util library — example workspace package.",
+  "main": "index.js",
+  "license": "MIT"
+}

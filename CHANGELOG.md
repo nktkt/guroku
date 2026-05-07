@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-05-06
+
+The "It's usable" milestone.
+
+### Added
+- Lifecycle scripts during `guroku install`: root-level `preinstall`, `install`, `postinstall`, `prepare`; per-package `preinstall`/`install`/`postinstall` (best-effort, warn on failure).
+- `--ignore-scripts` flag for `guroku install`.
+- `guroku run [<script>] [-- <args>]` — list scripts, run by name, forward args.
+- `guroku exec <command> [args...]` — run a binary, looking at `node_modules/.bin/` first then PATH.
+- `guroku workspaces` — list discovered workspace packages.
+- `node_modules/.bin/` symlinks for direct deps' `bin` entries (string and object forms).
+- `.npmrc` reading: project-local `<cwd>/.npmrc` plus user `~/.npmrc`; `registry=` and `<scope>:registry=` honoured. `_authToken=` parsed but not yet sent (v0.5).
+- New public modules: `guroku::scripts`, `guroku::npmrc`, `guroku::workspaces`, `guroku::commands::{run,exec,workspaces}`.
+- `Manifest::bin_entries()` and `Manifest::workspace_globs()` helpers normalising the npm/pnpm shape variants.
+- `RegistryClient::from_npmrc(cwd)` constructor used by all install paths.
+- `linker::populate_bin_dir`.
+- New error variants: `ScriptFailed`, `ScriptSpawnFailed`, `NoSuchScript`, `WorkspaceMisconfigured`, `BinNotFound`.
+- New deps: `glob`, `shell-words`.
+
+### Changed
+- `Manifest` gained typed `scripts`, `bin`, `workspaces` fields. JSON `scripts` no longer lands in `manifest.other`.
+- `LinkedPackage` gained `bin_entries`. v0.3 callers that constructed it directly need to add `bin_entries: vec![]` (or any populated value).
+- `commands::install::run` now takes `(cwd, frozen_lockfile, ignore_scripts)`.
+
+### Known limitations
+- Workspace inter-dep linking not yet wired (planned v0.5).
+- `.npmrc` `_authToken` parsed but unused on outgoing requests (planned v0.5).
+- No `npm_*` env vars exported to scripts (planned v0.4.x).
+- `${VAR}` interpolation in `.npmrc` not supported (planned v0.4.x).
+- No `guroku dlx` (planned v0.4.x).
+- Resolver still BFS sticky-first (PubGrub still future).
+
 ## [0.3.0] - 2026-05-06
 
 The "It's fast" milestone.

@@ -1,0 +1,87 @@
+# NOTE: This workflow hits the public npm registry (for `ms`).
+name: scripts-smoketest
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lifecycle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        timeout-minutes: 5
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        timeout-minutes: 5
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+        timeout-minutes: 5
+
+      - name: Build guroku (release)
+        run: cargo build --release
+        timeout-minutes: 5
+
+      - name: Reset example project state
+        working-directory: examples/with-scripts
+        run: rm -rf node_modules guroku.lock
+        timeout-minutes: 5
+
+      - name: Run guroku install (lifecycle scripts)
+        working-directory: examples/with-scripts
+        run: ../../target/release/guroku install 2>&1 | tee install.log
+        timeout-minutes: 5
+
+      - name: Verify preinstall and postinstall ran
+        working-directory: examples/with-scripts
+        run: |
+          grep -F '[preinstall]' install.log
+          grep -F '[postinstall]' install.log
+        timeout-minutes: 5
+
+      - name: Run guroku run build
+        working-directory: examples/with-scripts
+        run: ../../target/release/guroku run build 2>&1 | tee run.log
+        timeout-minutes: 5
+
+      - name: Verify build script output
+        working-directory: examples/with-scripts
+        run: grep -F 'pretend tsc invocation' run.log
+        timeout-minutes: 5
+
+      - name: Run guroku run say-hi with forwarded args
+        working-directory: examples/with-scripts
+        run: ../../target/release/guroku run say-hi -- world 2>&1 | tee say-hi.log
+        timeout-minutes: 5
+
+      - name: Verify say-hi script output
+        working-directory: examples/with-scripts
+        run: grep -F 'hello from world' say-hi.log
+        timeout-minutes: 5
+
+      - name: Run guroku install --ignore-scripts
+        working-directory: examples/with-scripts
+        run: ../../target/release/guroku install --ignore-scripts > ignore.log 2>&1 || true
+        timeout-minutes: 5
+
+      - name: Verify lifecycle skipped under --ignore-scripts
+        working-directory: examples/with-scripts
+        run: |
+          if grep -F '[preinstall]' ignore.log; then
+            echo "lifecycle script ran despite --ignore-scripts" >&2
+            exit 1
+          fi
+        timeout-minutes: 5

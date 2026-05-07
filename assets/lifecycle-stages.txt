@@ -1,0 +1,108 @@
+guroku install -- lifecycle stages (v0.4)
+================================================================================
+
+   +------------------------------+
+   | (start) `guroku install`     |
+   +---------------+--------------+
+                   |
+                   v
+   +------------------------------+        --ignore-scripts ?
+   | flag check: hooks enabled?   |--- yes ----------------------+
+   +---------------+--------------+                              |
+                   | no                                          |
+                   v                                             |
+   +------------------------------+                              |
+   | ROOT hook: `preinstall`      |                              |
+   +---------------+--------------+                              |
+                   |                                             |
+                   v                                             |
+   +------------------------------+   <----- (skip path joins -->|
+   | resolver: `resolve()`        |          back in here)       |
+   |   BFS, sticky-first          |                              |
+   |   v0.3 prefetch enabled      |                              |
+   +---------------+--------------+                              |
+                   |                                             |
+                   v                                             |
+   +------------------------------+                              |
+   | CAS pipeline (concurrency=8) |                              |
+   |   <---- parallel fetch ----> |                              |
+   |   <---- sha512 verify ----> |                               |
+   |   <---- extract tarball -->  |                              |
+   +---------------+--------------+                              |
+                   |                                             |
+                   v                                             |
+   +------------------------------+   --frozen-lockfile ? ---+   |
+   | lockfile write               |--- yes (skip) -----+     |   |
+   +---------------+--------------+                    |     |   |
+                   | no                                |     |   |
+                   v                                   v     v   |
+   +------------------------------+ <-----------------------------+
+   | linker:                      |   (hooks-skipped path
+   |   populate                   |    rejoins here, then
+   |   node_modules/.guroku/...   |    fast-forwards past
+   |   hardlinks + symlinks       |    every hook box below)
+   +---------------+--------------+
+                   |
+                   v
+   +------------------------------+
+   | linker:                      |
+   |   populate                   |
+   |   node_modules/.bin/         |
+   +---------------+--------------+
+                   |
+                   v
+   +------------------------------+      [skipped if --ignore-scripts]
+   | PER-PKG hooks (each pkg):    |
+   |   `preinstall`               |
+   |   `install`                  |
+   |   `postinstall`              |
+   |   best-effort, warn-on-fail  |
+   +---------------+--------------+
+                   |
+                   v
+   +------------------------------+      [skipped if --ignore-scripts]
+   | ROOT hook: `install`         |
+   +---------------+--------------+
+                   |
+                   v
+   +------------------------------+      [skipped if --ignore-scripts]
+   | ROOT hook: `postinstall`     |
+   +---------------+--------------+
+                   |
+                   v
+   +------------------------------+      [skipped if --ignore-scripts]
+   | ROOT hook: `prepare`         |
+   +---------------+--------------+
+                   |
+                   v
+   +------------------------------+
+   | (end) Ok  /  Err             |
+   +------------------------------+
+
+================================================================================
+LEGEND -- hooks (cross-ref: docs/internals/lifecycle.md)
+--------------------------------------------------------------------------------
+  ROOT hooks    -- run once for the project's own package.json:
+    preinstall  -- before resolve/fetch/link
+    install     -- after linker finishes
+    postinstall -- after `install` hook
+    prepare     -- final root stage (also runs on `pack`/`publish`)
+
+  PER-PKG hooks -- run per installed dependency, in dependency order:
+    preinstall  -- before the package's own install script
+    install     -- the package's main install script
+    postinstall -- after the package's install script
+                   (all per-pkg hooks: best-effort, warn-on-fail)
+
+  Flags:
+    --ignore-scripts    -- skips ALL ROOT and PER-PKG hooks
+    --frozen-lockfile   -- skips the lockfile-write stage only
+
+  Symbols:
+    +----+   stage box
+    <-->     parallel / streaming work inside a stage
+    -->      sequential edge between stages
+
+  Reference: docs/internals/lifecycle.md (sections: "Root hooks",
+             "Per-package hooks", "Flags & skipping").
+================================================================================

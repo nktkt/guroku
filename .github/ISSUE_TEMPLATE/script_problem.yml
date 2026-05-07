@@ -1,0 +1,97 @@
+name: "Script problem"
+description: "Report a problem with `guroku run`, `guroku exec`, or lifecycle scripts."
+title: "[scripts] "
+labels: ["scripts", "bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a script-related issue.
+
+        Before filing, please skim:
+        - `docs/scripts.md` — how `guroku run` and `guroku exec` resolve and execute scripts.
+        - `docs/lifecycle.md` — when lifecycle scripts (`preinstall`, `install`, `postinstall`, etc.) fire.
+
+        The more precisely you can describe the failing command and its output, the faster this can be triaged.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: "What happened?"
+      description: "What command did you run, what did you expect to happen, and what actually happened?"
+      placeholder: |
+        Command: guroku run build
+        Expected: tsc compiles and exits 0
+        Observed: exits 127, "tsc: command not found"
+    validations:
+      required: true
+
+  - type: textarea
+    id: package-scripts
+    attributes:
+      label: "package.json#scripts"
+      description: "Paste the `scripts` block from your `package.json`."
+      render: json
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: "Output"
+      description: "Paste the output of `GUROKU_LOG=debug guroku run <name>` (or `GUROKU_LOG=debug guroku install` for lifecycle script issues)."
+      render: shell
+    validations:
+      required: true
+
+  - type: input
+    id: guroku-version
+    attributes:
+      label: "guroku version"
+      description: "Output of `guroku --version`."
+      placeholder: "0.4.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: "Operating system"
+      options:
+        - macOS Apple Silicon
+        - macOS Intel
+        - Linux x86_64
+        - Linux aarch64
+        - Windows
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: shell
+    attributes:
+      label: "Shell"
+      description: "Which shell was used to invoke the script (or which shell guroku selected)?"
+      options:
+        - sh
+        - bash
+        - zsh
+        - dash
+        - cmd.exe
+        - PowerShell
+        - other
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: "Did you check?"
+      options:
+        - label: "I read `docs/scripts.md` / `docs/lifecycle.md`."
+        - label: "I tried with `--ignore-scripts` to confirm whether the bug is in script execution."
+        - label: "The same script body works when run directly via `sh -c \"...\"` (or `cmd /c` on Windows)."
+
+  - type: textarea
+    id: anything-else
+    attributes:
+      label: "Anything else?"
+      description: "Logs, links, related issues, custom shell config, anything that might help."

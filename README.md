@@ -4,7 +4,7 @@
 
 `guroku` is an experimental package manager inspired by [npm](https://www.npmjs.com/), [pnpm](https://pnpm.io/), and [bun](https://bun.sh/), built from scratch in Rust. The goal is to combine pnpm's content-addressable storage model with bun's installation speed, while staying small, hackable, and easy to read.
 
-> **Status:** v0.3 ships the "It's fast" milestone — content-addressable store + hardlinks + strict pnpm-style `node_modules` layout + parallel metadata prefetch + ETag-aware HTTP cache. Lifecycle scripts and workspaces are still v0.4 work. Pre-alpha; expect rough edges.
+> **Status:** v0.4 ships the "It's usable" milestone — lifecycle scripts (`postinstall` etc.), `guroku run`/`guroku exec`, workspace discovery, `node_modules/.bin/` shims, and `.npmrc` reading on top of v0.3's CAS + strict layout. Workspace inter-dep linking and registry auth tokens land in v0.5. Pre-alpha; expect rough edges.
 
 ---
 
@@ -71,12 +71,12 @@
 - [x] Parallel resolution prefetch + parallel CAS download pipeline
 - [x] HTTP response caching (ETag / If-None-Match)
 
-### v0.4 — "It's usable"
-- [ ] Lifecycle scripts (`preinstall`, `postinstall`, etc.)
-- [ ] Workspaces / monorepo support
-- [ ] `guroku run <script>`
-- [ ] `guroku exec` / `guroku dlx`
-- [ ] `.npmrc` compatibility (registry, auth tokens, scopes)
+### v0.4 — "It's usable" *(shipped 2026-05-06)*
+- [x] Lifecycle scripts (`preinstall`, `install`, `postinstall`, `prepare`)
+- [x] Workspaces — discovery (`guroku workspaces`); inter-dep linking deferred to v0.5
+- [x] `guroku run <script>` (with `-- args` forwarding)
+- [x] `guroku exec <cmd>`; `guroku dlx` deferred to v0.4.x
+- [x] `.npmrc` reading (registry + scoped registry); `_authToken` parsed, sent on requests in v0.5
 
 ### v0.5 — "It plays nice"
 - [ ] Private registry support (auth tokens, scoped registries)

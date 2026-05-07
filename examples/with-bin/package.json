@@ -1,0 +1,10 @@
+{
+  "name": "guroku-example-with-bin",
+  "version": "0.1.0",
+  "description": "Example: how guroku exec works with node_modules/.bin shims.",
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "cowsay": "^1.5.0"
+  }
+}
