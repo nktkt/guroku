@@ -56,11 +56,15 @@ pub async fn run(cwd: &Path, frozen_lockfile: bool, ignore_scripts: bool) -> Res
         install_from_lock(&client, lock, &node_modules, &direct_dep_names).await?
     } else {
         tracing::info!("resolving {} root packages", roots.len());
-        // v1.1: use the manifest-aware overrides path so path-keyed and
-        // glob entries are honoured. Falls back to flat-name lookup for
-        // existing simple-overrides users.
-        let resolution =
-            resolver::resolve_with_manifest_overrides(&client, &roots, &manifest).await?;
+        // v1.2: pubgrub-driven resolution. Internally falls back to the
+        // v1.1 BFS path for file:/git: roots, so embedders that don't
+        // opt out keep getting the strictly-more-capable solver. Set
+        // `GUROKU_RESOLVER=bfs` to force the v1.1 BFS resolver.
+        let resolution = if std::env::var("GUROKU_RESOLVER").as_deref() == Ok("bfs") {
+            resolver::resolve_with_manifest_overrides(&client, &roots, &manifest).await?
+        } else {
+            crate::pubgrub_resolver::resolve_with_pubgrub(&client, &roots, &manifest).await?
+        };
         tracing::info!("resolved {} packages", resolution.len());
 
         let linked =

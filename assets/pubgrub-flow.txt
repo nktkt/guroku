@@ -1,0 +1,87 @@
+guroku v1.2 :: pubgrub-driven resolution flow
+==============================================================================
+
+  +-----------------------------------------+
+  | roots: &[(name, raw_spec)]              |
+  +-----------------------------------------+
+                    |
+                    v
+  +-----------------------------------------+
+  | plan_roots                              |
+  |   - specs::classify each raw_spec       |
+  |   - overrides::lookup_with_path apply   |
+  |   - decompose Alias(name -> inner)      |
+  +-----------------------------------------+
+                    |
+                    v
+            < all roots Range
+              or Alias-of-Range ? >
+               /             \
+             NO               YES
+             |                  |
+             v                  v
+  +-------------------+   +-----------------------------------+
+  | fall back to v1.1 |   | prefetch_closure                  |
+  | resolver::        |   |   BFS-fetch every package name    |
+  | resolve_with_     |   |   reachable in the dep graph      |
+  | manifest_         |   |   (registry::fetch_metadata)      |
+  | overrides         |   +-----------------------------------+
+  +-------------------+                |
+             |                         v
+             |            +-----------------------------------+
+             |            | NpmDependencyProvider::new        |
+             |            |   ( cache , root_deps )           |
+             |            +-----------------------------------+
+             |                         |
+             |                         v
+             |            +-----------------------------------+
+             |            | pubgrub::solver::resolve          |
+             |            |   start: $guroku-root@0.0.0       |
+             |            |                                   |
+             |            |   choose_package_version:         |
+             |            |     highest matching version      |
+             |            |     per package                   |
+             |            |   get_dependencies:               |
+             |            |     lookup prefetched cache;      |
+             |            |     npm_range_to_pubgrub on each  |
+             |            |     dep spec                      |
+             |            +-----------------------------------+
+             |                         |
+             |                         v
+             |                 < pubgrub returned Ok ? >
+             |                    /              \
+             |                  YES               NO
+             |                   |                 |
+             |                   v                 v
+             |       +-----------------+   +---------------------+
+             |       | materialise     |   | translate_pubgrub_  |
+             |       |  SelectedDeps   |   | error               |
+             |       |    -->          |   |   DefaultString     |
+             |       |  Resolution     |   |   Reporter::report  |
+             |       |  map registry-  |   |     -->             |
+             |       |  name back to   |   |   ResolutionConflict|
+             |       |  local-name     |   +---------------------+
+             |       +-----------------+             |
+             |                |                      |
+             v                v                      v
+        +-----------------------------------------------------+
+        |                   result to caller                  |
+        +-----------------------------------------------------+
+
+------------------------------------------------------------------------------
+Legend (module : filename -- key items)
+------------------------------------------------------------------------------
+  pubgrub_resolver : src/pubgrub_resolver.rs
+                     resolve_with_pubgrub, plan_roots,
+                     prefetch_closure, materialise,
+                     translate_pubgrub_error
+  resolver         : src/resolver.rs
+                     resolve_with_manifest_overrides (BFS fallback)
+  overrides        : src/overrides.rs
+                     lookup_with_path
+  specs            : src/specs.rs
+                     classify
+  version          : src/version.rs
+                     max_satisfying, parse_range, parse_version
+  registry         : src/registry.rs
+                     PackageMetadata, fetch_metadata

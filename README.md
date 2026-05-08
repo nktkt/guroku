@@ -4,7 +4,7 @@
 
 `guroku` is an experimental package manager inspired by [npm](https://www.npmjs.com/), [pnpm](https://pnpm.io/), and [bun](https://bun.sh/), built from scratch in Rust. The goal is to combine pnpm's content-addressable storage model with bun's installation speed, while staying small, hackable, and easy to read.
 
-> **Status:** v1.1 — "It resolves better." First feature minor on top of v1.0's stability commitment. Adds npm-style aliases (`"react-old": "npm:react@^16"`), path-keyed overrides (`"a > b > c": "1.0.0"`), yarn-style glob resolutions (`"**/foo": "1.0.0"`), and single-step backtracking on diamond conflicts. The lockfile schema, `guroku::prelude` surface, and CLI are unchanged from v1.0. Full PubGrub integration is deferred to v1.2 — see [`docs/v1.1-release-notes.md`](docs/v1.1-release-notes.md).
+> **Status:** v1.2 — "It backtracks properly." First feature minor that ships a real PubGrub-based resolver as the default. Cascading conflicts that defeated v1.1's single-step backtracking now resolve cleanly when a solution exists, and produce structured derivation reports when one doesn't. The lockfile schema, `guroku::prelude` surface, and CLI are unchanged from v1.0. Set `GUROKU_RESOLVER=bfs` to force the v1.1 BFS path. See [`docs/v1.2-release-notes.md`](docs/v1.2-release-notes.md) and [`docs/pubgrub-resolver.md`](docs/pubgrub-resolver.md).
 
 ---
 
@@ -100,10 +100,14 @@
 - [x] `resolver::resolve_with_manifest_overrides` — the manifest-aware entry point that wires the new override forms through
 - [x] Strictly additive on the v1.0 stability surface — full PubGrub-the-crate integration deferred to v1.2
 
-### v1.2 — "It backtracks properly"
-- [ ] PubGrub-the-crate integration (npm-semver ↔ pubgrub Range conversion + sync-trait/async-client bridge)
-- [ ] Explainable conflict traces formatted with the v1.1 `>`-style path syntax
-- [ ] Path-aware backtracking that participates in pubgrub's incompatibility tracking
+### v1.2 — "It backtracks properly" *(shipped 2026-05-08)*
+- [x] `pubgrub = "0.2"` integration via the new `guroku::pubgrub_resolver` module
+- [x] `NpmVersion` newtype implementing `pubgrub::version::Version`
+- [x] Two-phase async-prefetch + sync-solve bridge
+- [x] Candidate-set range translation (`docs/internals/range-conversion.md`)
+- [x] DefaultStringReporter conflict reports surfaced via `ResolutionConflict.requested_by`
+- [x] `GUROKU_RESOLVER=bfs` opt-out preserves the v1.1 path
+- [x] file:/git: roots transparently fall back to v1.1 BFS
 
 ### v1.3 — "Workspaces, properly"
 - [ ] Cross-workspace symlinks (skip the CAS for sibling workspace packages)

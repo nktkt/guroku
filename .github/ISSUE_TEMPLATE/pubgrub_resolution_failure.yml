@@ -1,0 +1,102 @@
+name: "PubGrub resolution failure"
+description: "Report a `guroku install` failure originating from the v1.2 PubGrub resolver."
+title: "[pubgrub] "
+labels: ["resolver", "pubgrub", "bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a PubGrub resolution failure.
+
+        Before filing, please skim [`docs/internals/pubgrub-integration.md`](../../docs/internals/pubgrub-integration.md),
+        which describes how guroku v1.2 wraps the `pubgrub` crate and how incompatibilities are derived.
+
+        If you suspect the failure is specific to the new resolver, the escape hatch is:
+
+        ```
+        GUROKU_RESOLVER=bfs guroku install
+        ```
+
+        This forces guroku to fall back to the v1.1 BFS resolver. Running both and comparing the output
+        is the single most useful piece of information you can include in this report — it tells us
+        whether the failure is pubgrub-specific or shared with the legacy resolver.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: "What happened?"
+      description: "The exact error message guroku printed."
+    validations:
+      required: true
+  - type: textarea
+    id: package-json
+    attributes:
+      label: "package.json"
+      description: "Paste the project's package.json."
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: guroku-lock
+    attributes:
+      label: "guroku.lock (if it exists)"
+      description: "Paste the contents of guroku.lock, if your project has one."
+      render: json
+  - type: textarea
+    id: output-default
+    attributes:
+      label: "Output with default resolver"
+      description: "Full output of `GUROKU_LOG=debug guroku install`."
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: output-bfs
+    attributes:
+      label: "Output with `GUROKU_RESOLVER=bfs`"
+      description: "Full output of `GUROKU_LOG=debug GUROKU_RESOLVER=bfs guroku install`."
+      render: shell
+  - type: dropdown
+    id: bfs-comparison
+    attributes:
+      label: "Does the failure also happen with the BFS resolver?"
+      options:
+        - "BFS also fails (same error)"
+        - "BFS also fails (different error)"
+        - "BFS succeeds — pubgrub-specific bug"
+        - "I haven't tried BFS yet"
+    validations:
+      required: true
+  - type: input
+    id: guroku-version
+    attributes:
+      label: "guroku version"
+      placeholder: "1.2.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: "Operating system"
+      options:
+        - "macOS Apple Silicon"
+        - "macOS Intel"
+        - "Linux x86_64"
+        - "Linux aarch64"
+        - "Windows"
+        - "Other"
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: "Did you check?"
+      options:
+        - label: "I read `docs/internals/pubgrub-integration.md` to understand the v1.2 algorithm."
+        - label: "I tried adding a `package.json#overrides` entry to pin the conflicting dep."
+        - label: "I tried `GUROKU_RESOLVER=bfs` to compare with the BFS resolver."
+        - label: "Other package managers (npm/pnpm/yarn) succeed for this same `package.json`."
+  - type: textarea
+    id: anything-else
+    attributes:
+      label: "Anything else?"
+      description: "Any other context that might help us reproduce or diagnose the failure."

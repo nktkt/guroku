@@ -1,0 +1,8 @@
+# Build output
+node_modules/
+
+# Lockfile (regenerated; not checked into the example so users can compare resolvers cleanly)
+guroku.lock
+
+# OS junk
+.DS_Store

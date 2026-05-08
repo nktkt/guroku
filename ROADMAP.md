@@ -472,7 +472,9 @@ Shipped 2026-05-08.
 
 ---
 
-## v1.2 — "It backtracks properly"
+## v1.2 — "It backtracks properly" — Shipped
+
+
 
 ### Theme
 

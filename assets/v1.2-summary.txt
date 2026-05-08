@@ -1,0 +1,43 @@
++================================================================+
+|                       guroku 1.2.0                             |
+|                  "It backtracks properly"                      |
++================================================================+
+
+WHAT'S NEW
+  +-- pubgrub-based default resolver (handles cascading conflicts)
+  +-- DefaultStringReporter conflict reports in `requested_by`
+  +-- new module `guroku::pubgrub_resolver`
+  +-- new test surface (~12 pubgrub_* tests)
+  +-- file:/git: roots fall back to v1.1 BFS internally
+
+UNCHANGED FROM v1.0/v1.1
+  +-- guroku::prelude items
+  +-- lockfile schema (lockfileVersion: 1)
+  +-- CLI surface (every subcommand, every flag)
+  +-- Resolved/Resolution shape
+
+ESCAPE HATCH
+  GUROKU_RESOLVER=bfs guroku install     # use the v1.1 BFS path
+
+ENTRY POINTS
+  default              guroku::pubgrub_resolver::resolve_with_pubgrub
+  with-overrides       guroku::resolver::resolve_with_manifest_overrides
+  v1.1 still works     guroku::resolver::{resolve, resolve_with_overrides}
+
+DEPS ADDED
+  pubgrub = "0.2"      (pinned; v1.3 will track 0.3 once released)
+
+DOCS
+  docs/v1.2-release-notes.md
+  docs/migration/v1.1-to-v1.2.md
+  docs/pubgrub-resolver.md           (user-facing)
+  docs/internals/pubgrub-integration.md
+  docs/internals/range-conversion.md
+  docs/internals/two-phase-resolver.md
+  docs/internals/v1.2-architecture-decisions.md
+
+ROADMAP NEXT
+  v1.3 - workspaces, properly
+  v1.4 - it runs offline
+  v1.5 - it publishes
+  v1.6 - plugins

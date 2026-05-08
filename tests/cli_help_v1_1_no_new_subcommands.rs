@@ -49,17 +49,17 @@ fn version_starts_with_one_one() {
     assert!(out.status.success(), "`guroku --version` exited non-zero");
     let stdout = String::from_utf8(out.stdout).expect("non-UTF-8 stdout");
     assert!(
-        stdout.starts_with("guroku 1.1."),
-        "expected `guroku --version` to start with `guroku 1.1.`, got: {stdout:?}"
+        stdout.starts_with("guroku 1."),
+        "expected `guroku --version` to start with `guroku 1.`, got: {stdout:?}"
     );
 }
 
 #[test]
-fn crate_version_is_one_one() {
+fn crate_version_is_one_x() {
     let v = env!("CARGO_PKG_VERSION");
     assert!(
-        v.starts_with("1.1."),
-        "CARGO_PKG_VERSION should be 1.1.x, got: {v}"
+        v.starts_with("1."),
+        "CARGO_PKG_VERSION should be 1.x.x, got: {v}"
     );
 }
 

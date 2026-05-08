@@ -1,0 +1,204 @@
+guroku v1.2 :: install pipeline
+================================================================
+
+           +--------------------------+
+           |    `guroku install`      |
+           |    (commands::install)   |
+           +-------------+------------+
+                         |
+                         v
+           +--------------------------+
+           | 1. read package.json     |
+           |    Manifest::read_from   |
+           +-------------+------------+
+                         |
+                         v
+           +--------------------------+
+           | 2. parse roots into      |
+           |    (name, raw_spec)      |
+           |    pairs                 |
+           +-------------+------------+
+                         |
+                         v
+           +--------------------------+
+           | 3. read guroku.lock      |
+           |    (if present)          |
+           +-------------+------------+
+                         |
+                         v
+                  < --ignore-scripts? >
+                  /                  \
+              YES /                    \ NO
+                 |                      |
+                 |   (skip ALL hook     |
+                 |    boxes marked *)   |
+                 |                      v
+                 |       +--------------------------+
+                 |       | 4. * ROOT preinstall     |
+                 |       |      hook (scripts)      |
+                 |       +-------------+------------+
+                 |                     |
+                 +---------+-----------+
+                           |
+                           v
+                  < --frozen-lockfile? >
+                  /                    \
+              YES /                      \ NO
+                 v                        v
+   +-----------------------+      < GUROKU_RESOLVER=bfs? >
+   | 5a. install_from_lock |       /                    \
+   |     (skip resolution) |   YES /                      \ NO
+   +-----------+-----------+      v                        v
+               |       +---------------------+   +-----------------------+
+               |       | 5b-bfs. resolver::  |   | 5b. pubgrub_resolver::|
+               |       | resolve_with_       |   |   resolve_with_       |
+               |       | manifest_overrides  |   |   pubgrub             |
+               |       | (v1.1 fallback path)|   |   [v1.2 DEFAULT]      |
+               |       |---------------------|   |-----------------------|
+               |       | per (name, spec,    |   | - plan_roots:         |
+               |       |   path):            |   |   classify each root  |
+               |       |  - overrides via    |   |   spec (specs)        |
+               |       |    lookup_with_path |   |          |            |
+               |       |    (path + glob)    |   |          v            |
+               |       |    (overrides)      |   | < all roots Range or  |
+               |       |  - classify spec:   |   |   Alias-of-Range? >   |
+               |       |    Range / File /   |   |   /              \    |
+               |       |    Git / Alias      |   | NO/                \YES|
+               |       |    (specs)          |   |  |                  |  |
+               |       |  - Range -> registry|   |  |  +-------------+ |  |
+               |       |    (auth via npmrc) |   |  |  | prefetch_   | |  |
+               |       |  - File -> read     |   |  |  | closure     | |  |
+               |       |    local manifest   |   |  |  | (registry,  | |  |
+               |       |  - Git  -> clone +  |   |  |  |  npmrc auth)| |  |
+               |       |    read manifest    |   |  |  +------+------+ |  |
+               |       |    (git)            |   |  |         |        |  |
+               |       |  - Alias -> fetch   |   |  |         v        |  |
+               |       |    real_name, key   |   |  |  +-------------+ |  |
+               |       |    under local_name |   |  |  | NpmDependency| ||
+               |       |  - BFS sticky-first |   |  |  | Provider    | |  |
+               |       |  - conflict ->      |   |  |  | (adapter to | |  |
+               |       |    try_backtrack;   |   |  |  |  pubgrub)   | |  |
+               |       |    else             |   |  |  +------+------+ |  |
+               |       |    ResolutionConfl. |   |  |         |        |  |
+               |       |    requested_by =   |   |  |         v        |  |
+               |       |    path             |   |  |  +-------------+ |  |
+               |       +----------+----------+   |  |  | pubgrub::   | |  |
+               |                  |              |  |  | resolve     | |  |
+               |                  |              |  |  +------+------+ |  |
+               |                  |              |  |         |        |  |
+               |                  |              |  |    on conflict:  |  |
+               |                  |              |  |  ResolutionConfl.|  |
+               |                  |              |  |  requested_by =  |  |
+               |                  |              |  |  pubgrub report  |  |
+               |                  |              |  |  (multi-line,    |  |
+               |                  |              |  |   DefaultString  |  |
+               |                  |              |  |   Reporter)      |  |
+               |                  |              |  |                  |  |
+               |                  |              |  v                  v  |
+               |                  |              | fall back to v1.1   ok |
+               |                  |              |  (resolver::           |
+               |                  |              |   resolve_with_        |
+               |                  |              |   manifest_overrides)  |
+               |                  |              +-----------+------------+
+               |                  |                          |
+               |                  +----------+---------------+
+               |                             |
+               |                             v
+               |               +---------------------------------+
+               |               | 6. write guroku.lock            |
+               |               |    lockfileVersion: 1           |
+               |               |    schema UNCHANGED from v1.1   |
+               |               |    Lockfile::write_to           |
+               |               +----------------+----------------+
+               |                                |
+               +---------------+----------------+
+                               |
+                               v
+           +-------------------------------------+
+           | 7. parallel CAS pipeline            |
+           |    (Range entries only,             |
+           |     concurrency = 8)                |
+           |-------------------------------------|
+           | - fetch tarball (registry, auth)    |
+           | - verify SHA-512    (store)         |
+           | - extract into ~/.guroku/cas/       |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 8. local-source entries skip CAS    |
+           |    File / Git -> hardlink straight  |
+           |    from disk into                   |
+           |    .guroku/<id>/node_modules/<name> |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 9. linker::populate_node_modules    |
+           |-------------------------------------|
+           | - mkdir node_modules/.guroku        |
+           | - hardlinks: CAS / local-src -->    |
+           |     .guroku/<id>/                   |
+           |       node_modules/<name>           |
+           |     (alias entries land under       |
+           |      local_name)                    |
+           | - sibling symlinks for each         |
+           |   package's deps                    |
+           | - top-level surface symlinks for    |
+           |   direct deps                       |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 10. linker::populate_bin_dir        |
+           |     node_modules/.bin/<name> shims  |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 11. * PER-PKG lifecycle hooks       |
+           |     preinstall / install /          |
+           |     postinstall (scripts)           |
+           |     best-effort, warn-on-fail       |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 12. * ROOT install hook (scripts)   |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 13. * ROOT postinstall hook         |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 14. * ROOT prepare hook             |
+           +------------------+------------------+
+                              |
+                              v
+                  +-----------------------+
+                  | populated node_modules|
+                  +-----------------------+
+
+  (*) boxes are skipped entirely when --ignore-scripts is set.
+
+----------------------------------------------------------------
+Legend (module : filename)
+  commands::install : src/commands/install.rs
+  pubgrub_resolver  : src/pubgrub_resolver.rs
+  resolver          : src/resolver.rs
+  specs             : src/specs.rs
+  overrides         : src/overrides.rs
+  git               : src/git.rs
+  registry          : src/registry.rs
+  npmrc             : src/npmrc.rs
+  store             : src/store.rs
+  linker            : src/linker.rs
+  scripts           : src/scripts.rs
+  lockfile          : src/lockfile.rs
+
+----------------------------------------------------------------
+v1.2 changes vs v1.1: default resolver is pubgrub. Lockfile schema,
+CLI surface, and Resolved shape unchanged from v1.1.

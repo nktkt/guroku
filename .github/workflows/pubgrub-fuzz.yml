@@ -1,0 +1,96 @@
+# pubgrub-fuzz: v1.2 narrow-scope companion to ci.yml.
+# Runs the pubgrub resolver test suite with verbose output and exercises
+# install against example fixtures with both GUROKU_RESOLVER=bfs and the
+# default resolver to ensure they agree on the resulting lockfile.
+# Future v1.x iterations can grow this into actual fuzz testing via
+# cargo-fuzz against the resolver.
+name: pubgrub-fuzz
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pubgrub:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo artifacts
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run pubgrub resolver tests (verbose)
+        run: |
+          cargo test --test pubgrub_npm_version -- --nocapture
+          cargo test --test pubgrub_resolver_simple -- --nocapture
+          cargo test --test pubgrub_diamond_conflict -- --nocapture
+          cargo test --test pubgrub_cascade_backtrack -- --nocapture
+          cargo test --test pubgrub_conflict_report_format -- --nocapture
+          cargo test --test pubgrub_overrides_applied -- --nocapture
+          cargo test --test pubgrub_alias_root -- --nocapture
+          cargo test --test pubgrub_file_root_falls_back -- --nocapture
+          cargo test --test pubgrub_resolver_smoke_lib -- --nocapture
+
+      - name: Smoke build (no default features, release)
+        run: |
+          cargo build --no-default-features --release
+
+      - name: Install fixtures with default resolver
+        run: |
+          set -euo pipefail
+          for fixture in examples/*/; do
+            if [ -f "$fixture/package.json" ]; then
+              echo "::group::default resolver: $fixture"
+              (cd "$fixture" && cargo run --release -- install)
+              if [ -f "$fixture/guroku.lock" ]; then
+                cp "$fixture/guroku.lock" "$fixture/guroku.lock.default"
+              fi
+              echo "::endgroup::"
+            fi
+          done
+
+      - name: Install fixtures with GUROKU_RESOLVER=bfs
+        env:
+          GUROKU_RESOLVER: bfs
+        run: |
+          set -euo pipefail
+          for fixture in examples/*/; do
+            if [ -f "$fixture/package.json" ]; then
+              echo "::group::bfs resolver: $fixture"
+              (cd "$fixture" && cargo run --release -- install)
+              if [ -f "$fixture/guroku.lock" ]; then
+                cp "$fixture/guroku.lock" "$fixture/guroku.lock.bfs"
+              fi
+              echo "::endgroup::"
+            fi
+          done
+
+      - name: Compare lockfiles between resolvers
+        run: |
+          set -euo pipefail
+          mismatched=0
+          for fixture in examples/*/; do
+            if [ -f "$fixture/guroku.lock.default" ] && [ -f "$fixture/guroku.lock.bfs" ]; then
+              if ! diff -u "$fixture/guroku.lock.default" "$fixture/guroku.lock.bfs"; then
+                echo "Lockfile mismatch in $fixture"
+                mismatched=1
+              fi
+            fi
+          done
+          if [ "$mismatched" -ne 0 ]; then
+            echo "Resolvers disagree on at least one fixture lockfile."
+            exit 1
+          fi

@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-05-08
+
+The "It backtracks properly" milestone. First feature minor that integrates pubgrub-the-crate as the default dependency resolver. The v1.0 stability surface (`guroku::prelude`, lockfile schema, CLI surface) is unchanged; v1.1's BFS + single-step backtracking remains available via opt-out.
+
+### Added
+- **`guroku::pubgrub_resolver`** module:
+  - `NpmVersion` newtype around `node_semver::Version` implementing `pubgrub::version::Version` (`lowest()` returns `0.0.0`; `bump()` returns patch+1, stripping pre-release tags).
+  - `resolve_with_pubgrub(client, roots, manifest)` — async entry point. Two-phase: BFS-prefetches every package name reachable in the dep graph, then runs `pubgrub::solver::resolve` synchronously against the prefetched cache.
+  - File:/git: roots transparently fall back to `resolver::resolve_with_manifest_overrides` (the v1.1 BFS path).
+- **`commands::install::run`** uses pubgrub by default. Set `GUROKU_RESOLVER=bfs` to force the v1.1 BFS path.
+- **Range translation**: pubgrub `Range<NpmVersion>` is built as a union of singletons over the prefetched candidate set. Correct against the candidate set; documented in `docs/internals/range-conversion.md`.
+- **Conflict explainer**: pubgrub's `DefaultStringReporter::report` is rendered into `GurokuError::ResolutionConflict.requested_by` for pubgrub-produced conflicts. The v1.1 path-formatted conflict format is preserved for the BFS path.
+- New tests: `tests/pubgrub_npm_version*.rs`, `tests/pubgrub_resolver_simple.rs`, `tests/pubgrub_diamond_conflict.rs`, `tests/pubgrub_cascade_backtrack.rs`, `tests/pubgrub_conflict_report_format.rs`, `tests/pubgrub_overrides_applied.rs`, `tests/pubgrub_alias_root.rs`, `tests/pubgrub_file_root_falls_back.rs`, `tests/pubgrub_resolver_smoke_lib.rs`, `tests/pubgrub_does_not_export_pubgrub_crate.rs`, `tests/pubgrub_smoke_async_runtime.rs`, `tests/pubgrub_resolver_module_listed.rs`, `tests/pubgrub_npm_version_pubgrub_dep_visible.rs`, `tests/cargo_toml_pubgrub_dep.rs`, `tests/cli_help_no_pubgrub_leak.rs`, `tests/cli_help_v1_2_no_new_subcommands.rs`, `tests/cli_install_help_v1_2.rs`, `tests/cli_version_includes_v1_2.rs`, `tests/lib_v1_2_smoke.rs`, `tests/lockfile_v1_2_compat.rs`, `tests/api_stability_v1_2_prelude.rs`, `tests/error_kind_v1_2.rs`, `tests/manifest_unchanged_v1_2.rs`, `tests/specs_unchanged_v1_2.rs`, `tests/overrides_unchanged_v1_2.rs`, `tests/version_unchanged_v1_2.rs`, `tests/registry_unchanged_v1_2.rs`, `tests/release_notes_present_v1_2.rs`.
+- Examples: `examples/with-cascade-backtrack/` (package.json, README.md, .gitignore).
+- Docs: `docs/v1.2-release-notes.md`, `docs/migration/v1.1-to-v1.2.md`, `docs/pubgrub-resolver.md` (user-facing). Internals: `docs/internals/{pubgrub-integration, range-conversion, two-phase-resolver, pubgrub-version-trait, pubgrub-conflict-explainer, pubgrub-error-translation, v1.2-checklist, v1.2-architecture-decisions}.md`. Contributing: `docs/contributing/{v1.2-features-overview, pubgrub-debugging}.md`.
+- Assets: `assets/v1.2-banner.txt`, `pubgrub-flow.txt`, `install-pipeline-v1.2.txt`, `v1.2-summary.txt`.
+- Templates: `.github/PULL_REQUEST_TEMPLATE/pubgrub_change.md`, `.github/ISSUE_TEMPLATE/pubgrub_resolution_failure.yml`.
+- CI: `.github/workflows/pubgrub-fuzz.yml`.
+
+### Changed
+- New runtime dependency: `pubgrub = "0.2"`.
+- Crate version bumped to 1.2.0.
+- `commands::install::run` resolver dispatch (env-var-gated; no CLI surface change).
+
+### Stability commitments (additive)
+- `guroku::prelude` items, lockfile schema (`lockfileVersion: 1`), and CLI surface unchanged from v1.0.
+- v1.0/v1.1 lockfiles read by v1.2 unchanged; lockfile bytes for unchanged inputs are bit-compatible.
+- `Resolved`, `Resolution`, `ResolutionConflict` shapes unchanged from v1.1.
+
+### Known limitations
+- pubgrub 0.2 pinned. v1.3 will track pubgrub 0.3 once released.
+- Range translation is candidate-set-based, not structural. Means we prefetch the closure of all reachable names; future v1.3 may cut this for performance via structural translation.
+- `aliased_from`-style transitive aliasing still pending.
+- File:/git: roots use the BFS resolver internally; v1.3 may unify.
+- Workspace inter-dep linking still pending (v1.3).
+- Macrobench harness vs npm/pnpm/bun/yarn deferred (microbenches scaffolded since v1.0).
+
 ## [1.1.0] - 2026-05-08
 
 The "It resolves better" milestone. First feature minor after v1.0's stability commitment, additive on the v1.0 surface.
@@ -232,7 +269,8 @@ The "It resolves correctly" milestone.
 - Tarball extractor rejects entries with `..` components.
 - Every download is verified against its registry-declared `sha512` integrity before extraction.
 
-[Unreleased]: https://github.com/nktkt/guroku/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/nktkt/guroku/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/nktkt/guroku/releases/tag/v1.2.0
 [1.1.0]: https://github.com/nktkt/guroku/releases/tag/v1.1.0
 [1.0.0]: https://github.com/nktkt/guroku/releases/tag/v1.0.0
 [0.5.0]: https://github.com/nktkt/guroku/releases/tag/v0.5.0

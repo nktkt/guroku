@@ -92,6 +92,7 @@ pub mod manifest;
 pub mod npmrc;
 pub mod overrides;
 pub mod prelude;
+pub mod pubgrub_resolver;
 pub mod registry;
 pub mod resolver;
 pub mod scripts;
