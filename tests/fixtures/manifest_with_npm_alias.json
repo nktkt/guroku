@@ -1,0 +1,14 @@
+{
+  "name": "guroku-fixture-with-npm-alias",
+  "version": "1.0.0",
+  "description": "Fixture: package.json with npm: aliases.",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "lodash-v4": "npm:lodash@^4.17.0",
+    "lodash-v5": "npm:lodash@^5.0.0",
+    "old-types": "npm:@types/node@^16",
+    "new-types": "npm:@types/node@^20",
+    "ms": "^2.1.0"
+  }
+}

@@ -1,0 +1,44 @@
+# resolver-fuzz: v1.1 narrow-scope companion to ci.yml.
+#
+# The main ci.yml workflow already runs the full test suite. This workflow
+# focuses specifically on the resolver-related tests (the v1.1 backtracking
+# path and its surrounding fixtures) with verbose output so regressions in
+# that area are easier to triage from the PR check logs. It also smoke-runs
+# the criterion bench for version_satisfies to catch obvious perf cliffs.
+#
+# Future v1.x.x can grow this into actual fuzz testing via cargo-fuzz once
+# we have a corpus worth running; for now it is just an extra targeted
+# pass over the resolver tests on top of normal CI.
+
+name: resolver-fuzz
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  resolver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Resolver tests (verbose)
+        run: |
+          cargo test --test resolver_no_backtrack -- --nocapture
+          cargo test --test resolved_aliased_from -- --nocapture
+          cargo test --test resolution_alias_lookup -- --nocapture
+          cargo test --test overrides_path_keyed -- --nocapture
+          cargo test --test overrides_glob -- --nocapture
+          cargo test --test resolution_conflict_path_format -- --nocapture
+      - name: Bench smoke (version_satisfies)
+        run: cargo bench --bench version_satisfies -- --quick

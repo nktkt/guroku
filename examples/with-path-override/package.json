@@ -1,0 +1,13 @@
+{
+  "name": "guroku-example-with-path-override",
+  "version": "0.1.0",
+  "description": "Example: package.json#overrides with a path-keyed entry under guroku v1.1.",
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "is-odd": "^3.0.0"
+  },
+  "overrides": {
+    "is-odd > is-number": "6.0.0"
+  }
+}

@@ -4,7 +4,7 @@
 
 `guroku` is an experimental package manager inspired by [npm](https://www.npmjs.com/), [pnpm](https://pnpm.io/), and [bun](https://bun.sh/), built from scratch in Rust. The goal is to combine pnpm's content-addressable storage model with bun's installation speed, while staying small, hackable, and easy to read.
 
-> **Status:** v1.0 — "It's stable." The lockfile schema (`lockfileVersion: 1`), the public Rust API exposed via `guroku::prelude`, and the documented CLI surface are all covered by SemVer. See [`docs/STABILITY.md`](docs/STABILITY.md) for the commitment. The roadmap is complete; v1.x will add the PubGrub resolver, workspace inter-dep linking, and richer audit features without breaking the v1.0 surface.
+> **Status:** v1.1 — "It resolves better." First feature minor on top of v1.0's stability commitment. Adds npm-style aliases (`"react-old": "npm:react@^16"`), path-keyed overrides (`"a > b > c": "1.0.0"`), yarn-style glob resolutions (`"**/foo": "1.0.0"`), and single-step backtracking on diamond conflicts. The lockfile schema, `guroku::prelude` surface, and CLI are unchanged from v1.0. Full PubGrub integration is deferred to v1.2 — see [`docs/v1.1-release-notes.md`](docs/v1.1-release-notes.md).
 
 ---
 
@@ -92,11 +92,44 @@
 - [x] Pre-built binaries via GitHub Releases (Linux x86_64/aarch64, macOS x86_64/aarch64, Windows x86_64/aarch64)
 - [x] Benchmark suite scaffolding (criterion microbenches under `benches/`); macrobench harness vs. npm/pnpm/bun/yarn deferred to v1.x — see `docs/benchmark-methodology.md`
 
+### v1.1 — "It resolves better" *(shipped 2026-05-08)*
+- [x] npm-style aliases (`"react-old": "npm:react@^16"`) — `DepSpec::Alias`, classifier splits on the last `@` so scoped real names work
+- [x] Path-keyed overrides (`"a > b > c": "1.0.0"`) with whitespace tolerance
+- [x] Yarn-style glob resolutions (`"**/foo": "1.0.0"`)
+- [x] Single-step backtracking on diamond conflicts; `ResolutionConflict.requested_by` now formats the dep-graph path as `"a > b > c"`
+- [x] `resolver::resolve_with_manifest_overrides` — the manifest-aware entry point that wires the new override forms through
+- [x] Strictly additive on the v1.0 stability surface — full PubGrub-the-crate integration deferred to v1.2
+
+### v1.2 — "It backtracks properly"
+- [ ] PubGrub-the-crate integration (npm-semver ↔ pubgrub Range conversion + sync-trait/async-client bridge)
+- [ ] Explainable conflict traces formatted with the v1.1 `>`-style path syntax
+- [ ] Path-aware backtracking that participates in pubgrub's incompatibility tracking
+
+### v1.3 — "Workspaces, properly"
+- [ ] Cross-workspace symlinks (skip the CAS for sibling workspace packages)
+- [ ] Topological `guroku run -r <script>` with stream-prefixed output
+- [ ] Workspace-scoped lockfile (single root lockfile covering every workspace)
+- [ ] `workspace:^`, `workspace:*`, `workspace:~` protocols
+
+### v1.4 — "It runs offline"
+- [ ] `guroku store export <out.tar>` / `import <in.tar>` for portable CAS bundles
+- [ ] `--offline` flag for `install` (no network calls; errors if the CAS is incomplete)
+- [ ] `guroku store gc` over a configurable scan list
+
+### v1.5 — "It publishes"
+- [ ] `guroku publish` (npm-compatible tarball + integrity + provenance + dist-tag)
+- [ ] 2FA / OTP flows
+- [ ] Sigstore-backed `--provenance` matching npm's format
+- [ ] `guroku version` (mirror of `npm version`)
+
+### v1.6 — "Plugins"
+- [ ] WASM-component plugin host with explicit capabilities
+- [ ] Per-project plugin enablement via `.gurokurc.json`
+- [ ] CLI extension points (`guroku <plugin-name> <args>`)
+- [ ] Lifecycle hook extension points (`pre-resolve`, `post-resolve`, `pre-link`, `post-link`, `pre-script`, `post-script`)
+
 ### Future / maybe
-- [ ] Plugin system
-- [ ] Offline mode with pre-warmed store snapshots
 - [ ] Deno / JSR registry support
-- [ ] `guroku publish`
 
 ---
 

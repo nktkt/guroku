@@ -1,0 +1,13 @@
+{
+  "name": "guroku-example-with-glob-resolution",
+  "version": "0.1.0",
+  "description": "Example: yarn-style **/<name> glob in package.json#resolutions, supported by guroku v1.1.",
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "is-odd": "^3.0.0"
+  },
+  "resolutions": {
+    "**/is-number": "6.0.0"
+  }
+}

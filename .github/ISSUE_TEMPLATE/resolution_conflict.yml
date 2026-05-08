@@ -1,0 +1,90 @@
+name: "Resolution conflict"
+description: "Report a `guroku install` failure rooted in dependency resolution (`version conflict for ...`)."
+title: "[resolver] "
+labels: ["resolver", "bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a resolution conflict report.
+
+        Before going further, please skim `docs/internals/single-step-backtrack.md` for
+        an overview of how guroku resolves dependencies today.
+
+        Note: guroku v1.1 ships **single-step backtracking** only. Full PubGrub-style
+        resolution is not implemented yet, so some conflicts that npm/pnpm/yarn
+        resolve via deeper backtracking may still fail here. Reports like this one
+        are exactly what we need to prioritize the move to a complete algorithm.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: "What happened?"
+      description: "Paste the exact `version conflict for X` error message guroku printed."
+      placeholder: "version conflict for ..."
+    validations:
+      required: true
+  - type: textarea
+    id: package-json
+    attributes:
+      label: "package.json"
+      description: "Paste the project's package.json."
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: guroku-lock
+    attributes:
+      label: "guroku.lock (if it exists)"
+      description: "Paste the contents of guroku.lock, if you have one."
+      render: json
+  - type: textarea
+    id: output
+    attributes:
+      label: "Output"
+      description: "Full output of `GUROKU_LOG=debug guroku install`."
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: guroku-version
+    attributes:
+      label: "guroku version"
+      placeholder: "1.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: "Operating system"
+      options:
+        - macOS Apple Silicon
+        - macOS Intel
+        - Linux x86_64
+        - Linux aarch64
+        - Windows
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: resolver-path
+    attributes:
+      label: "Resolver path"
+      options:
+        - Standard registry resolution
+        - With overrides
+        - With aliases
+        - "With file:/git: deps"
+        - Mixed (multiple)
+  - type: checkboxes
+    id: did-you-check
+    attributes:
+      label: "Did you check?"
+      options:
+        - label: "I read `docs/internals/single-step-backtrack.md` to understand the v1.1 algorithm."
+        - label: "I tried adding a `package.json#overrides` entry to pin the conflicting dep."
+        - label: "Other package managers (npm/pnpm/yarn) succeed for this same `package.json` (or fail with a similar error)."
+  - type: textarea
+    id: anything-else
+    attributes:
+      label: "Anything else?"
+      description: "Optional. Anything else we should know."

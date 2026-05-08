@@ -116,7 +116,7 @@ pub fn classify_entries(manifest: &Manifest) -> Vec<OverrideEntry<'_>> {
     out
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OverrideSource {
     Overrides,
     Resolutions,

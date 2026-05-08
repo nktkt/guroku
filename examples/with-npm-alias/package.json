@@ -1,0 +1,12 @@
+{
+  "name": "guroku-example-with-npm-alias",
+  "version": "0.1.0",
+  "description": "Example: npm:<real>@<spec> aliases under guroku v1.1.",
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "is-odd-v3": "npm:is-odd@^3.0.0",
+    "is-odd-v2": "npm:is-odd@^2.0.0",
+    "ms": "^2.1.0"
+  }
+}

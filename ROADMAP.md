@@ -149,7 +149,7 @@ constraints.
 
 ### Current status
 
-Not started.
+Shipped 2026-05-06.
 
 ---
 
@@ -214,7 +214,7 @@ warm cache, competitive with pnpm."
 
 ### Current status
 
-Not started.
+Shipped 2026-05-06.
 
 ---
 
@@ -277,7 +277,7 @@ and respecting the configuration users already have in `.npmrc`.
 
 ### Current status
 
-Not started.
+Shipped 2026-05-06.
 
 ---
 
@@ -338,7 +338,7 @@ local path deps, version overrides, and a security audit story.
 
 ### Current status
 
-Not started.
+Shipped 2026-05-08.
 
 ---
 
@@ -393,6 +393,222 @@ defensible benchmarks — backing up our claims.
 - The benchmark suite has been run on a known reference machine and the
   results published in the release notes.
 - At least three downstream projects have signed off on the v1 API.
+
+### Current status
+
+Shipped 2026-05-08.
+
+---
+
+## v1.1 — "It resolves better"
+
+### Theme
+
+v1.0 froze the surface; v1.1 starts adding the features people actually asked
+for, on top of that frozen surface. The theme is "make resolution itself
+smarter and more controllable" — npm-style aliases so two versions of the
+same registry package can live side-by-side under different local names,
+path-keyed and glob overrides so projects can pin transitives precisely, and
+single-step backtracking so the resolver no longer dies on common diamond
+conflicts. PubGrub-the-crate is intentionally NOT in this milestone.
+
+### Features
+
+- **`DepSpec::Alias` and `npm:` parsing.** `"react-old": "npm:react@^16"`
+  classifies as `Alias { real_name: "react", inner: Range("^16") }`. Splits
+  on the LAST `@` so scoped real names work. `unparse` round-trips. Aliased
+  entries land in `node_modules/<local_name>/`, with `Resolved.aliased_from
+  = Some(real_name)` for downstream tooling.
+- **Path-keyed overrides.** `"a > b > c": "1.0.0"` in `package.json#overrides`
+  pins `c` only when reached through `a → b → c`. Whitespace tolerant.
+  Implemented as a suffix match on the resolution path.
+- **Glob resolutions.** `"**/<name>": "1.0.0"` in `package.json#resolutions`
+  pins any `<name>` anywhere in the dep tree. Honours the literal
+  `**/<name>` shape only; richer globs are v1.x backlog.
+- **Documented precedence ladder.** exact-path overrides → flat overrides →
+  exact-path resolutions → flat resolutions → `**/<name>` resolutions. The
+  v1.0 `lookup` shim survives, calling `lookup_with_path(&[name])` under
+  the hood — strictly more permissive than v1.0 but never less so.
+- **Single-step backtracking.** When a diamond conflict arrives — package X
+  needs `dep@^1.2` but the resolver already chose `dep@1.1.0` for someone
+  else — the resolver walks the candidate list highest-first looking for a
+  version that satisfies BOTH ranges. If found, it substitutes. If not, it
+  errors with a path-formatted `ResolutionConflict`. v1.0's BFS sticky-first
+  would have died on the spot.
+- **Path-formatted conflict errors.** `ResolutionConflict.requested_by` now
+  carries `"a > b > c"` so users can see which dep chain wanted what.
+- **Manifest-aware resolver entry point.** `resolver::resolve_with_manifest_overrides(client, roots, manifest)` is the preferred way to drive the
+  resolver from a Manifest. The older `resolve_with_overrides` continues to
+  work (and is what the new entry point ultimately calls into).
+
+### Entry criteria
+
+- v1.0 is tagged.
+- The path-keyed override format has been dogfooded on at least one
+  in-tree fixture.
+
+### Exit criteria for merging into `main`
+
+- Aliased deps install side-by-side with their non-aliased namesakes; the
+  `tests/manifest_aliases_dont_collide.rs` fixture passes.
+- Path-keyed and glob entries are honoured by `resolver::resolve_with_manifest_overrides`; `tests/overrides_path_keyed.rs` and
+  `tests/overrides_glob.rs` cover the matching ladder.
+- A diamond-conflict regression case (one transitive that two roots want at
+  incompatible ranges) backtracks successfully when a satisfying version
+  exists, errors cleanly when it doesn't.
+
+### Exit criteria for tagging v1.1
+
+- All v1.0 tests still pass (`tests/api_stability_*`, `tests/lockfile_v1_compat.rs`, `tests/cli_help_v1.rs`, etc.). v1.1 is strictly additive on the
+  documented v1.0 surface.
+- A v1.0 lockfile is consumed by v1.1 with no migration.
+- `docs/migration/v1.0-to-v1.1.md` is published.
+- Release notes call out the deferred PubGrub work explicitly so users
+  aren't surprised when their pathological case still needs an override.
+
+### Current status
+
+Shipped 2026-05-08.
+
+---
+
+## v1.2 — "It backtracks properly"
+
+### Theme
+
+v1.1 ships single-step backtracking, which is enough for the common diamond
+case but not enough for cascading conflicts where one substitution forces
+another. v1.2 brings in PubGrub for real.
+
+### Features
+
+- **PubGrub integration.** Wire `pubgrub-the-crate` behind the existing
+  resolver entry points. Convert npm-semver Ranges to pubgrub Ranges; bridge
+  the sync trait surface to the async metadata client (probably with a
+  prefetch step that hydrates everything pubgrub needs in advance).
+- **Explainable conflicts.** When pubgrub fails, surface the human-readable
+  conflict trace it produces, formatted with our `>`-style path syntax.
+- **Path-aware backtracking.** Path-keyed overrides participate in
+  pubgrub's incompatibility tracking so they're not invisible to the
+  conflict explainer.
+- **Resolver determinism guarantees.** Two runs against the same registry
+  metadata produce byte-identical lockfiles, independent of network
+  ordering. v1.1 inherits this from sticky-first; v1.2 keeps it under
+  pubgrub.
+
+### Entry criteria
+
+- v1.1 is tagged.
+- A test corpus of diamond and cascade conflicts (both solvable and
+  insoluble) is in tree.
+
+### Exit criteria for tagging v1.2
+
+- The corpus solves where pubgrub-the-crate says it should and fails with
+  a readable explanation where it shouldn't.
+- Lockfile bytes for the v1.1 test fixtures are unchanged (or the diff is
+  documented).
+
+### Current status
+
+Not started.
+
+---
+
+## v1.3 — "Workspaces, properly"
+
+### Theme
+
+v0.4 added a `guroku workspaces` subcommand and discovery; v1.3 makes
+workspaces a first-class peer of registry deps in the resolver and linker.
+
+### Features
+
+- **Cross-workspace symlinks.** A workspace package depending on a sibling
+  workspace package gets a symlink to the sibling's source dir, no CAS
+  detour.
+- **Topological `guroku run -r <script>`.** Runs scripts across workspaces
+  in dependency order, with stream-prefixed output and a final summary.
+- **Workspace-scoped lockfile.** A single root lockfile captures the
+  resolution for all workspaces. Per-workspace `node_modules` is wired so
+  each workspace sees only its declared deps (plus hoisted ones).
+- **Workspace protocols.** `"@scope/sibling": "workspace:^"`, `"workspace:*"`,
+  `"workspace:~"` are recognised. The `workspace:` prefix bypasses registry
+  fetching and points at the local workspace.
+
+### Current status
+
+Not started.
+
+---
+
+## v1.4 — "It runs offline"
+
+### Theme
+
+Make the CAS portable so an air-gapped install is one `tar` extract away.
+
+### Features
+
+- **`guroku store export <out.tar>`.** Packs the CAS plus the project's
+  lockfile entries into a portable archive.
+- **`guroku store import <in.tar>`.** Hydrates the CAS from such an archive.
+- **`--offline` flag for `install`.** Refuses any network call. Errors if
+  the CAS doesn't already cover the lockfile.
+- **CAS GC.** `guroku store gc` walks every project's lockfile under a
+  configurable scan list and removes CAS entries no longer referenced.
+
+### Current status
+
+Not started.
+
+---
+
+## v1.5 — "It publishes"
+
+### Theme
+
+Closes the loop. Today guroku only consumes the registry; v1.5 lets you
+publish to it.
+
+### Features
+
+- **`guroku publish`.** Produces an npm-compatible tarball, computes
+  integrity, signs (provenance attestation, dist-tag setting), uploads
+  to the configured registry.
+- **2FA / OTP flows.** `--otp <code>` and an interactive prompt fallback.
+- **Provenance.** Sigstore-backed `--provenance` flag matching npm's
+  provenance format so guroku-published packages are interoperable.
+- **`guroku version`.** Bumps the manifest version, optionally tags git,
+  optionally pre-releases. Mirrors `npm version`.
+
+### Current status
+
+Not started.
+
+---
+
+## v1.6 — "Plugins"
+
+### Theme
+
+A stable extension point so third parties can add commands, registry
+backends, or lifecycle hooks without forking. Pinned to v1.6 because
+plugins need a stable enough core to extend; v1.0 froze the surface but
+the resolver and linker have moved enough since then that v1.6 is the
+realistic earliest.
+
+### Features
+
+- **WASM-component plugin host.** Plugins compile to WASM components and
+  are loaded at startup. Capabilities are explicit (filesystem,
+  registry-call, exec).
+- **Plugin manifest in `.gurokurc.json`.** Per-project plugin enablement.
+- **CLI extension points.** `guroku <plugin-name> <args>` routes to the
+  plugin's exported handler.
+- **Lifecycle hook extension points.** Plugins can subscribe to
+  `pre-resolve`, `post-resolve`, `pre-link`, `post-link`, `pre-script`,
+  `post-script`.
 
 ### Current status
 

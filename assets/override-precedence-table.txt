@@ -1,0 +1,27 @@
+Override Precedence Ladder (guroku v1.1)
+========================================
+
+Highest precedence at the top. The first matching rule wins; later
+rules are only consulted when no earlier rule produced a pin.
+
++---+--------------+------------------+----------------------------+
+| # | Source       | Key shape        | Example                    |
++---+--------------+------------------+----------------------------+
+| 1 | overrides    | exact path       | "a > b > c": "1.0.0"       |
+| 2 | overrides    | flat name        | "c": "1.0.0"               |
+| 3 | resolutions  | exact path       | "a > b > c": "1.0.0"       |
+| 4 | resolutions  | flat name        | "c": "1.0.0"               |
+| 5 | resolutions  | glob **/<name>   | "**/c": "1.0.0"            |
++---+--------------+------------------+----------------------------+
+
+Notes
+-----
+- Path keys match as suffixes of the resolution path. So
+  "b > c" matches both ["a","b","c"] and ["b","c"].
+- Whitespace around `>` is tolerated.
+- The current glob form is literal `**/<name>` only.
+  `**/<scope>/<name>` is NOT supported in v1.1.
+- Aliases use the LOCAL name in the path, not the
+  registry-side `real_name`.
+- The `lookup` shim from v1.0 is retained (it just calls
+  `lookup_with_path(&[name])`).

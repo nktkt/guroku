@@ -1,0 +1,68 @@
+guroku v1.1 - resolver single-step backtracking flow
+=====================================================
+
+   +-----------------------------------------------+
+   | 1. Pop (name, range, path) from queue         |
+   +-----------------------------------------------+
+                       |
+                       v
+   +-----------------------------------------------+
+   | 2. overrides::lookup_with_path(path)          |
+   |    if matched -> replace range                |
+   +-----------------------------------------------+
+                       |
+                       v
+   +-----------------------------------------------+
+   | 3. specs::classify(spec)                      |
+   |    -> Range | File | Git | Alias              |
+   +-----------------------------------------------+
+                       |
+                       v
+            < chosen[name] already set? >
+              |                    |
+              | NO                 | YES
+              v                    v
+   +--------------------+   +-----------------------------+
+   | fetch metadata if  |   | 5. existing version         |
+   | missing            |   |    satisfies new range?     |
+   | max_satisfying     |   +-----------------------------+
+   | push transitives   |          |              |
+   +--------------------+          | YES          | NO
+              |                    v              v
+              |          +------------------+  +--------------------+
+              |          | continue         |  | try_backtrack(     |
+              |          | (no change)      |  |   metadata, name,  |
+              |          +------------------+  |   existing_range,  |
+              |                    |           |   new_range)       |
+              |                    |           +--------------------+
+              |                    |                    |
+              |                    |                    v
+              |                    |        < returned a candidate? >
+              |                    |             |              |
+              |                    |             | YES          | NO
+              |                    |             v              v
+              |                    |   +------------------+  +-----------------+
+              |                    |   | substitute       |  | Err(Resolution- |
+              |                    |   | chosen[name]     |  |   Conflict {    |
+              |                    |   | with new         |  |   requested_by: |
+              |                    |   | candidate;       |  |   format_path(  |
+              |                    |   | continue         |  |     path) })    |
+              |                    |   +------------------+  +-----------------+
+              |                    |             |
+              +--------------------+-------------+
+                                   |
+                                   v
+                          (next item in queue)
+
+
+Legend - module : filename (key symbols)
+----------------------------------------
+  resolver  : src/resolver.rs
+              (resolve_with_manifest_overrides, try_backtrack,
+               format_path)
+  overrides : src/overrides.rs
+              (lookup_with_path)
+  specs     : src/specs.rs
+              (classify)
+  version   : src/version.rs
+              (max_satisfying, parse_range)

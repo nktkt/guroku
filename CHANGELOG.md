@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-05-08
+
+The "It resolves better" milestone. First feature minor after v1.0's stability commitment, additive on the v1.0 surface.
+
+### Added
+- `DepSpec::Alias { real_name, inner }` — npm-style dependency aliases like `"react-old": "npm:react@^16"`. The classifier splits on the LAST `@` so scoped real names (`@types/node`) round-trip. `unparse` emits `npm:<real>@<inner>`.
+- `overrides::lookup_with_path(&Manifest, &[&str]) -> Option<String>` — path-aware override lookup. Honours path-keyed `"a > b > c"` overrides and yarn-style `**/<name>` glob resolutions. Whitespace around `>` tolerated.
+- Override precedence ladder (highest first): exact-path overrides → flat overrides → exact-path resolutions → flat resolutions → `**/<name>` resolutions.
+- `overrides::OverrideEntry`, `OverrideKind` (Flat/Path/Glob/Unknown), `OverrideSource`, `classify_entries()` — for diagnostics.
+- `resolver::resolve_with_manifest_overrides(client, roots, manifest)` — preferred entry point that wires path-keyed and glob overrides through the resolver.
+- Resolver now tracks the dep-graph path as `Vec<String>` per queue item; conflicts surface a "a > b > c"-formatted path in `ResolutionConflict.requested_by`.
+- `Resolved.aliased_from: Option<String>` — populated with the registry name for aliased entries; None otherwise.
+- Single-step backtracking on diamond conflicts: when a transitive's existing pick can't satisfy a newly-arrived range, the resolver walks the candidate list highest-first to find a version satisfying both ranges. Honest-scoped: full PubGrub integration is deferred to v1.2.
+- New tests covering aliases, path-keyed overrides, glob resolutions, single-step backtracking, conflict path formatting, and v1.0 compatibility of the `lookup` shim.
+- New fixtures: `tests/fixtures/manifest_with_npm_alias.json`, `manifest_with_path_keyed_overrides.json`, `manifest_with_glob_resolutions.json`.
+- New examples: `examples/with-npm-alias/`, `examples/with-path-override/`, `examples/with-glob-resolution/`.
+- Docs: `docs/aliases.md`, `docs/path-keyed-overrides.md`, `docs/glob-resolutions.md`, `docs/v1.1-release-notes.md`, `docs/migration/v1.0-to-v1.1.md`. Internals: `docs/internals/{npm-aliases, path-keyed-overrides, glob-resolutions, single-step-backtrack, path-tracking-in-resolver, aliasing-and-the-linker, v1.1-checklist}.md`. Contributing: `docs/contributing/v1.1-features-overview.md`.
+- Assets: `assets/v1.1-banner.txt`, `resolver-backtracking-flow.txt`, `install-pipeline-v1.1.txt`, `override-precedence-table.txt`.
+- Templates: `.github/PULL_REQUEST_TEMPLATE/resolver_change.md`, `.github/ISSUE_TEMPLATE/resolution_conflict.yml`.
+- CI: `.github/workflows/resolver-fuzz.yml` runs resolver/override tests with `--nocapture` and smoke-runs the version_satisfies bench.
+
+### Changed
+- `DepSpec` is now `#[non_exhaustive]`. External `match` blocks must include a `_` arm.
+- `Resolved` gained an `aliased_from` field. v1.0 callers that constructed `Resolved` directly need to add `aliased_from: None`.
+- `ResolutionConflict.requested_by` now carries a `>`-joined dep-graph path instead of just a flat name.
+- CAS map keys (`install::install_from_resolution`) are the LOCAL dependency name (the `Resolution` map key) rather than `info.name`. Aliased entries previously would have mis-keyed; in v1.0 there were no aliases so this was unobservable.
+- `LinkedPackage.name` is now the LOCAL name. Same reason.
+- `commands::install::run` now calls `resolver::resolve_with_manifest_overrides` instead of `resolver::resolve_with_overrides`. The latter remains available; the former is preferred.
+- Crate version bumped to 1.1.0.
+
+### Stability commitments (additive)
+- Items in `guroku::prelude` and the v1.0 CLI surface are unchanged. v1.0 callers compile against v1.1 with at most adding a `_` arm to `match` on `DepSpec` and adding `aliased_from: None` if constructing `Resolved` literals.
+- Lockfile schema is unchanged. v1.0 lockfiles are read by v1.1 with no migration.
+
+### Known limitations
+- Full PubGrub-the-crate integration deferred to v1.2 (npm-semver ↔ pubgrub-Range conversion non-trivial; trait is sync-only). v1.1 ships single-step backtracking only.
+- Path-keyed overrides do not yet support wildcards within a path (`a > * > b`), OR patterns, or negation.
+- Glob resolutions only honour the literal `**/<name>` form. `pkg/**/foo`, `*-helper`, brace expansion not supported.
+- Aliases only propagate through ROOT deps. Transitive aliasing requires full dep-tree rewriting (v1.x backlog).
+- Workspace inter-dep linking still pending.
+
 ## [1.0.0] - 2026-05-08
 
 The "It's stable" milestone. First release with a SemVer commitment.
@@ -191,5 +232,11 @@ The "It resolves correctly" milestone.
 - Tarball extractor rejects entries with `..` components.
 - Every download is verified against its registry-declared `sha512` integrity before extraction.
 
-[Unreleased]: https://github.com/nktkt/guroku/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/nktkt/guroku/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/nktkt/guroku/releases/tag/v1.1.0
+[1.0.0]: https://github.com/nktkt/guroku/releases/tag/v1.0.0
+[0.5.0]: https://github.com/nktkt/guroku/releases/tag/v0.5.0
+[0.4.0]: https://github.com/nktkt/guroku/releases/tag/v0.4.0
+[0.3.0]: https://github.com/nktkt/guroku/releases/tag/v0.3.0
+[0.2.0]: https://github.com/nktkt/guroku/releases/tag/v0.2.0
 [0.1.0]: https://github.com/nktkt/guroku/releases/tag/v0.1.0

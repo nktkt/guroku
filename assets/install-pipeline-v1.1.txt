@@ -1,0 +1,176 @@
+guroku v1.1 :: install pipeline
+================================================================
+
+           +--------------------------+
+           |    `guroku install`      |
+           |    (commands::install)   |
+           +-------------+------------+
+                         |
+                         v
+           +--------------------------+
+           | 1. read package.json     |
+           |    Manifest::read_from   |
+           +-------------+------------+
+                         |
+                         v
+           +--------------------------+
+           | 2. parse roots into      |
+           |    (name, raw_spec)      |
+           |    pairs                 |
+           +-------------+------------+
+                         |
+                         v
+           +--------------------------+
+           | 3. read guroku.lock      |
+           |    (if present)          |
+           +-------------+------------+
+                         |
+                         v
+                  < --ignore-scripts? >
+                  /                  \
+              YES /                    \ NO
+                 |                      |
+                 |   (skip ALL hook     |
+                 |    boxes marked *)   |
+                 |                      v
+                 |       +--------------------------+
+                 |       | 4. * ROOT preinstall     |
+                 |       |      hook (scripts)      |
+                 |       +-------------+------------+
+                 |                     |
+                 +---------+-----------+
+                           |
+                           v
+                  < --frozen-lockfile? >
+                  /                    \
+              YES /                      \ NO
+                 v                        v
+   +-----------------------+   +---------------------------------+
+   | 5a. install_from_lock |   | 5b. resolver::                  |
+   |     (skip resolution) |   |     resolve_with_manifest_      |
+   +-----------+-----------+   |     overrides   [NEW ENTRY]     |
+               |               |---------------------------------|
+               |               | per (name, raw_spec, path):     |
+               |               |  - apply overrides via          |
+               |               |    lookup_with_path             |
+               |               |    (path-keyed + glob)          |
+               |               |    (overrides)                  |
+               |               |  - classify each spec:          |
+               |               |    Range / File / Git / Alias   |
+               |               |    (specs)                      |
+               |               |  - Range -> registry fetch      |
+               |               |    (auth via npmrc +            |
+               |               |     scope routing)              |
+               |               |  - File  -> read local          |
+               |               |    manifest from disk           |
+               |               |  - Git   -> subprocess clone    |
+               |               |    + read manifest (git)        |
+               |               |  - Alias -> registry fetch uses |
+               |               |    real_name; resolution is     |
+               |               |    keyed under local_name       |
+               |               |  - BFS over deps,               |
+               |               |    sticky-first (lock reuse)    |
+               |               |  - on conflict: try_backtrack;  |
+               |               |    else ResolutionConflict      |
+               |               |    with `requested_by` = path   |
+               |               +----------------+----------------+
+               |                                |
+               |                                v
+               |               +---------------------------------+
+               |               | 6. write guroku.lock            |
+               |               |    lockfileVersion: 1           |
+               |               |    schema UNCHANGED from v1.0   |
+               |               |    Lockfile::write_to           |
+               |               +----------------+----------------+
+               |                                |
+               +---------------+----------------+
+                               |
+                               v
+           +-------------------------------------+
+           | 7. parallel CAS pipeline            |
+           |    (Range entries only,             |
+           |     concurrency = 8)                |
+           |-------------------------------------|
+           | - fetch tarball (registry, auth)    |
+           | - verify SHA-512    (store)         |
+           | - extract into ~/.guroku/cas/       |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 8. local-source entries skip CAS    |
+           |    File / Git -> hardlink straight  |
+           |    from disk into                   |
+           |    .guroku/<id>/node_modules/<name> |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 9. linker::populate_node_modules    |
+           |-------------------------------------|
+           | - mkdir node_modules/.guroku        |
+           | - hardlinks: CAS / local-src -->    |
+           |     .guroku/<id>/                   |
+           |       node_modules/<name>           |
+           |     (alias entries land under       |
+           |      local_name)                    |
+           | - sibling symlinks for each         |
+           |   package's deps                    |
+           | - top-level surface symlinks for    |
+           |   direct deps                       |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 10. linker::populate_bin_dir        |
+           |     node_modules/.bin/<name> shims  |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 11. * PER-PKG lifecycle hooks       |
+           |     preinstall / install /          |
+           |     postinstall (scripts)           |
+           |     best-effort, warn-on-fail       |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 12. * ROOT install hook (scripts)   |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 13. * ROOT postinstall hook         |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 14. * ROOT prepare hook             |
+           +------------------+------------------+
+                              |
+                              v
+                  +-----------------------+
+                  | populated node_modules|
+                  +-----------------------+
+
+  (*) boxes are skipped entirely when --ignore-scripts is set.
+
+----------------------------------------------------------------
+Legend (module : filename)
+  commands::install : src/commands/install.rs
+  resolver          : src/resolver.rs
+  specs             : src/specs.rs
+  overrides         : src/overrides.rs
+  git               : src/git.rs
+  registry          : src/registry.rs
+  npmrc             : src/npmrc.rs
+  store             : src/store.rs
+  linker            : src/linker.rs
+  scripts           : src/scripts.rs
+  lockfile          : src/lockfile.rs
+
+----------------------------------------------------------------
+v1.1 changes vs v1.0: alias handling + path-keyed/glob overrides
++ single-step backtracking. Lockfile schema and CLI surface are
+unchanged from v1.0.

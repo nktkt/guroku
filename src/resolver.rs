@@ -313,7 +313,7 @@ fn try_backtrack(
         .filter(|k| parse_version(k).is_ok())
         .map(String::as_str)
         .collect();
-    keys.sort_by(|a, b| parse_version(b).unwrap().cmp(&parse_version(a).unwrap()));
+    keys.sort_by_key(|k| std::cmp::Reverse(parse_version(k).unwrap()));
     for key in keys {
         let v = parse_version(key).ok()?;
         if existing_range.satisfies(&v) && new_range.satisfies(&v) {
