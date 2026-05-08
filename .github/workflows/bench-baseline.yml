@@ -1,0 +1,54 @@
+# bench-baseline: criterion benchmark baseline collector for guroku.
+#
+# This workflow is a BASELINE COLLECTOR, not a PR gate. We do not block PRs on
+# perf because criterion's CI noise floor is too high without dedicated
+# hardware -- shared GitHub-hosted runners produce too much variance for
+# meaningful regression detection.
+#
+# After a run, the criterion HTML report lives at:
+#   target/criterion/report/index.html
+# It is uploaded as the "criterion-report" artifact below.
+#
+# For serious perf comparisons, prefer running locally with a saved baseline:
+#   cargo bench -- --save-baseline foo
+#   # ... make changes ...
+#   cargo bench -- --baseline foo
+#
+# Future work: provision a dedicated bare-metal runner (pinned CPU, disabled
+# turbo, isolated cores) so this workflow can graduate into a real perf gate.
+
+name: bench-baseline
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Run criterion benchmarks
+        env:
+          CRITERION_DEBUG: "true"
+        run: cargo bench --workspace --no-fail-fast
+
+      - name: Upload criterion report
+        uses: actions/upload-artifact@v4
+        with:
+          name: criterion-report
+          path: target/criterion

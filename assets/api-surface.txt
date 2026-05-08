@@ -1,0 +1,90 @@
+# guroku 1.0 public Rust API surface
+# Items in [stable] are SemVer-covered.
+
+guroku::
+  Result<T>                         [stable]   // alias for std::result::Result<T, GurokuError>
+  GurokuError                       [stable]   // #[non_exhaustive]
+  prelude::                         [stable]   // recommended embedder import
+    Lockfile, PackageLock, LOCKFILE_NAME, LOCKFILE_VERSION
+    Manifest
+    RegistryClient, PackageMetadata, VersionInfo, DEFAULT_REGISTRY
+    Resolution, Resolved
+    DepSpec, GitRef, classify_spec
+    Range, Version, parse_range, parse_version, max_satisfying
+    GurokuError, Result
+
+guroku::manifest::                  [stable]
+  Manifest::{read_from, write_to, add_dependency, remove_dependency,
+             all_dependencies, bin_entries, workspace_globs}
+
+guroku::registry::                  [stable]
+  RegistryClient::{new, with_default_registry, from_npmrc,
+                   without_http_cache, fetch_metadata, fetch_tarball,
+                   registry_base, http_post_json}
+  PackageMetadata::resolve
+
+guroku::lockfile::                  [stable]
+  Lockfile::{new, read_from, write_to, insert, contains, key}
+
+guroku::resolver::                  [stable]
+  resolve(client, roots) -> Result<Resolution>
+  resolve_with_overrides(client, roots, &BTreeMap<String,String>) -> Result<Resolution>
+  prefetch(client, names) -> Result<HashMap<String, PackageMetadata>>
+
+guroku::specs::                     [stable]
+  classify(s) -> DepSpec
+  unparse(&DepSpec) -> String
+  validate(&DepSpec) -> Result<()>
+
+guroku::version::                   [stable]
+  parse_range, parse_version, max_satisfying
+
+guroku::audit::                     [stable for fields, semi-stable for fns]
+  audit(client, lockfile) -> Result<AuditReport>
+  print_report(&AuditReport)
+  AuditReport, Advisory
+
+guroku::overrides::                 [stable]
+  lookup(manifest, name) -> Option<String>
+  merged(manifest) -> BTreeMap<String, String>
+
+guroku::http_cache::                [semi-stable]
+  read, write, read_in, write_in, CachedMetadata
+
+guroku::store::                     [semi-stable]
+  ensure_extracted, ensure_extracted_at, CAS_READY_MARKER
+
+guroku::linker::                    [semi-stable]
+  link_flat, link_hardlink_tree, populate_node_modules,
+  populate_bin_dir, LinkedPackage
+
+guroku::scripts::                   [semi-stable]
+  run_in, run_in_with_args
+
+guroku::workspaces::                [semi-stable]
+  discover, discover_with_manifest, Workspace
+
+guroku::cache::                     [semi-stable]
+  home, store_dir, package_dir, cas_dir, cas_entry,
+  tarball_cache_dir, metadata_cache_dir, metadata_cache_entry,
+  metadata_etag_entry, git_cache_dir, safe_segment
+
+guroku::commands::                  [semi-stable; intended for re-driving install]
+  install::run, install_from_resolution, write_lockfile
+  add::run, remove::run, run::run, exec::run, workspaces::run, audit::run
+  fetch_into_cas, into_linked_packages, parse_spec
+
+guroku::cli::                       [stable for shape, semi-stable for impl]
+  Cli, Command (clap derive output for the binary)
+
+guroku::error::                     [stable for variants in v1.0]
+  GurokuError variants pinned by tests/error_kind_classification.rs.
+
+# Legend
+[stable]      - covered by SemVer in the v1.x line.
+[semi-stable] - pub but may be reorganised in minor releases. Use cautiously.
+
+# How to read this:
+# - Items under guroku::prelude:: are the recommended import surface for embedders.
+# - Anything in [semi-stable] modules can be used; just don't pin a major release on
+#   its exact signature staying put without checking CHANGELOG between minor releases.

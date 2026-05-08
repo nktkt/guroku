@@ -1,0 +1,51 @@
+# ---------------------------------------------------------------------------
+# SemVer policy for guroku
+#
+# Every pull request is checked against the published v1.x baseline using
+# cargo-semver-checks. The goal is to make accidental breaking changes to the
+# public Rust API visible during PR review, before they ship to crates.io.
+#
+# Intentional breaking changes target the next major (v2.0). When such a
+# change lands on a release branch, the maintainer should override this
+# workflow's result (e.g. mark the failing check as not required, or merge
+# with admin) rather than reverting the change. Do not paper over the
+# breakage by tweaking the public API back to source-compat just to make
+# this job green; that defeats the purpose of the check.
+#
+# Items exempt from these checks:
+#   - enums marked `#[non_exhaustive]`
+#   - items marked `#[doc(hidden)]`
+# These are considered unstable surface and may change without a major bump.
+# ---------------------------------------------------------------------------
+
+name: semver-checks
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  semver:
+    name: cargo-semver-checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo artifacts
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run cargo-semver-checks
+        uses: obi1kenobi/cargo-semver-checks-action@v2

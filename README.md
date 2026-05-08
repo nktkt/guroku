@@ -4,7 +4,7 @@
 
 `guroku` is an experimental package manager inspired by [npm](https://www.npmjs.com/), [pnpm](https://pnpm.io/), and [bun](https://bun.sh/), built from scratch in Rust. The goal is to combine pnpm's content-addressable storage model with bun's installation speed, while staying small, hackable, and easy to read.
 
-> **Status:** v0.5 ships the "It plays nice" milestone — bearer-auth + scoped private registries, `file:` and `git+` dependencies, `package.json#overrides` / `resolutions`, and `guroku audit` against the npm advisory database. Workspace inter-dep linking and the long-promised PubGrub resolver replacement are the next two big targets, slated for v0.6 / v1.0. Pre-alpha; expect rough edges.
+> **Status:** v1.0 — "It's stable." The lockfile schema (`lockfileVersion: 1`), the public Rust API exposed via `guroku::prelude`, and the documented CLI surface are all covered by SemVer. See [`docs/STABILITY.md`](docs/STABILITY.md) for the commitment. The roadmap is complete; v1.x will add the PubGrub resolver, workspace inter-dep linking, and richer audit features without breaking the v1.0 surface.
 
 ---
 
@@ -85,12 +85,12 @@
 - [x] `package.json#overrides` / `resolutions` — simple flat-name → exact-version form (path-keyed and glob forms parse but aren't matched yet)
 - [x] `guroku audit` — npm advisories bulk endpoint
 
-### v1.0 — "It's stable"
-- [ ] Stable lockfile format
-- [ ] Documented public Rust API for embedders
-- [ ] Cross-platform CI (Linux, macOS, Windows)
-- [ ] Pre-built binaries via GitHub Releases
-- [ ] Benchmark suite vs. npm / pnpm / bun / yarn
+### v1.0 — "It's stable" *(shipped 2026-05-08)*
+- [x] Stable lockfile format (`lockfileVersion: 1` covered by SemVer; forward-compat tests in place)
+- [x] Documented public Rust API for embedders (`guroku::prelude` + comprehensive rustdoc)
+- [x] Cross-platform CI (Linux + macOS in `ci.yml`; Win/Mac/Linux matrix in `cross-platform-test.yml`)
+- [x] Pre-built binaries via GitHub Releases (Linux x86_64/aarch64, macOS x86_64/aarch64, Windows x86_64/aarch64)
+- [x] Benchmark suite scaffolding (criterion microbenches under `benches/`); macrobench harness vs. npm/pnpm/bun/yarn deferred to v1.x — see `docs/benchmark-methodology.md`
 
 ### Future / maybe
 - [ ] Plugin system

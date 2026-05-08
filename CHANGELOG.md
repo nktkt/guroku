@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-05-08
+
+The "It's stable" milestone. First release with a SemVer commitment.
+
+### Added
+- `guroku::prelude` module re-exporting the v1.0 stable surface (`Lockfile`, `Manifest`, `RegistryClient`, `Resolution`, `Resolved`, `DepSpec`, `GitRef`, `classify_spec`, `Range`, `Version`, `parse_range`, `parse_version`, `max_satisfying`, plus `LOCKFILE_NAME`, `LOCKFILE_VERSION`, `DEFAULT_REGISTRY`, `GurokuError`, `Result`).
+- Comprehensive crate-level rustdoc on `src/lib.rs` covering CLI quickstart, embedding quickstart, the module map, and the stability commitment.
+- `[[bench]]` entries and criterion-based benchmark scaffolds for `lockfile_parse`, `manifest_parse`, `spec_classify`, `version_satisfies`.
+- Pre-built Windows binaries (x86_64-pc-windows-msvc, aarch64-pc-windows-msvc) in the release workflow.
+- New CI workflows: `semver-checks.yml` (cargo-semver-checks against the published baseline), `cross-platform-test.yml` (explicit Win/Mac/Linux matrix), `bench-baseline.yml` (criterion artifact uploads).
+- Stability tests: `tests/api_stability_re_exports.rs`, `tests/api_stability_prelude.rs`, `tests/lockfile_v1_compat.rs`, `tests/lockfile_unknown_field.rs`, `tests/lockfile_format_stability.rs`, `tests/manifest_unknown_field.rs`, `tests/manifest_full_round_trip.rs`, `tests/cli_help_v1.rs`, `tests/cli_subcommand_inventory.rs`, `tests/cli_version_includes_v1.rs`, `tests/version_v1_constants.rs`, `tests/integrity_known_vector.rs`, `tests/error_kind_classification.rs`, `tests/cache_paths_v1.rs`, `tests/registry_user_agent.rs`, `tests/minimal_imports.rs`, `tests/lib_doctest_smoke.rs`.
+- v1 fixtures: `tests/fixtures/v1_minimal_lockfile.json`, `v1_realistic_lockfile.json`, `v1_manifest_full.json`.
+- Stability docs: `docs/STABILITY.md`, `docs/MSRV.md`, `docs/deprecation-policy.md`, `docs/api-overview.md`, `docs/embedding-guroku.md`, `docs/internals/api-design.md`, `docs/contributing/api-stability.md`, `docs/contributing/v1.0-features-overview.md`, `docs/internals/v1.0-checklist.md`.
+- Migration guide `docs/migration/v0.5-to-v1.0.md` and prose release notes `docs/v1.0-release-notes.md`.
+- Embedding example `examples/embedding-rust/` (Cargo.toml + src/main.rs + README + .gitignore).
+- Cross-installer benchmark fixture `examples/benchmark-target/` (package.json + README) plus `docs/benchmark-methodology.md`.
+- Top-level `ANNOUNCEMENT.md` and `COMPATIBILITY.md`.
+- ASCII assets: `assets/v1.0-banner.txt`, `api-surface.txt`, `install-pipeline-v1.0.txt`.
+- PR template variant `PR_TEMPLATE/api_change.md` and issue template `ISSUE_TEMPLATE/api_compatibility.yml`.
+
+### Changed
+- `GurokuError` is now `#[non_exhaustive]`. External `match` blocks must include a `_` arm. New error variants in future minor releases will not break consumers.
+- Crate version bumped to 1.0.0.
+
+### Stability commitments (new)
+- Lockfile schema (`lockfileVersion: 1`) is SemVer-stable for the v1.x line. Forward-compatibility tests baked in via `tests/lockfile_unknown_field.rs`.
+- Items re-exported by `guroku::prelude` are SemVer-stable. Renames require the deprecation cycle described in `docs/deprecation-policy.md`.
+- The CLI surface (every subcommand, flag, and exit code documented as of v1.0) is SemVer-stable.
+
+### Known limitations
+- PubGrub-based resolver still future work (BFS sticky-first remains).
+- Workspace inter-dep linking still pending.
+- `--audit-level`, `--json`, `audit fix` deferred.
+- Macrobench harness vs npm/pnpm/bun/yarn deferred (microbenches scaffolded, methodology documented).
+- npm Basic auth, `${VAR}` interpolation in `.npmrc`, and `npm_config_*` env vars not yet supported.
+
 ## [0.5.0] - 2026-05-08
 
 The "It plays nice" milestone.

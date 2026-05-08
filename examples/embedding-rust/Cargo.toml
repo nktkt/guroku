@@ -1,0 +1,15 @@
+[package]
+name = "guroku-embedding-example"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# This example shows how an external crate would depend on guroku.
+# In a real consumer you'd write `guroku = "1"` (or pin to a specific
+# 1.x). Here we use a path dependency so the example tracks the local
+# checkout.
+[dependencies]
+guroku = { path = "../.." }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }

@@ -1,0 +1,93 @@
+name: "API / lockfile compatibility report"
+description: "Report a regression in the v1.0 stability commitment."
+title: "[stability] "
+labels: ["stability", "bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a stability report against guroku v1.0.
+
+        Before filing, please read [`docs/STABILITY.md`](../blob/main/docs/STABILITY.md). The v1.0 stability commitment is scoped: not every observable change is a violation. When you fill out this form, **cite the specific promise** in `docs/STABILITY.md` (or another stability doc) that you believe has been violated, and quote the relevant line or section.
+
+        If you are not sure whether the change you observed is covered by the commitment, file the issue anyway: the maintainers can close it as out-of-scope. False positives are cheap; silent regressions are not.
+  - type: dropdown
+    id: surface
+    attributes:
+      label: "What's affected?"
+      description: "Which surface of guroku exhibits the regression?"
+      options:
+        - "Rust API (prelude)"
+        - "Rust API (non-prelude)"
+        - "CLI surface"
+        - "Lockfile schema"
+        - "Other (explain in body)"
+    validations:
+      required: true
+  - type: textarea
+    id: versions
+    attributes:
+      label: "Which guroku versions did you compare?"
+      description: "List the older (working) version and the newer (broken) version you compared."
+      render: shell
+      placeholder: |
+        old: 1.0.0
+        new: 1.X.Y
+      value: |
+        old: 1.0.0
+        new: 1.X.Y
+    validations:
+      required: true
+  - type: textarea
+    id: what-broke
+    attributes:
+      label: "What broke?"
+      description: "Describe the regression in your own words. What did the old version do? What does the new version do? Why do you believe this is a stability violation rather than an intentional change?"
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: "Minimal reproduction"
+      description: "Provide the smallest possible code or shell session that reproduces the regression on both versions."
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: citation
+    attributes:
+      label: "Citation"
+      description: "Quote the specific line or section in `docs/STABILITY.md` (or other stability doc) that the change appears to violate. Include a link or path if possible."
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: "Operating system"
+      options:
+        - "macOS Apple Silicon"
+        - "macOS Intel"
+        - "Linux x86_64"
+        - "Linux aarch64"
+        - "Windows"
+        - "Other"
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: "Confirmations"
+      options:
+        - label: "I confirmed the older version's behaviour by running it on the same fixture."
+          required: true
+        - label: "I read `docs/STABILITY.md` and the cited promise applies to my change."
+          required: true
+        - label: "I'm filing this even though I might be wrong; the maintainer can close it as such."
+          required: true
+  - type: textarea
+    id: anything-else
+    attributes:
+      label: "Anything else?"
+      description: "Optional: any additional context, hypotheses about the cause, related issues, or workarounds you've found."
+    validations:
+      required: false

@@ -1,0 +1,64 @@
+# guroku v1.0 explicitly commits to Windows working (in addition to Linux and
+# macOS). The existing ci.yml runs Windows with continue-on-error as a soft
+# signal; this workflow is the hard regression gate that enforces the v1.0
+# cross-platform promise across a richer OS and Rust toolchain matrix.
+name: cross-platform-test
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.os }} / rust ${{ matrix.rust }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - ubuntu-22.04
+          - macos-latest
+          - macos-13
+          - windows-latest
+        rust:
+          - stable
+          - "1.75"
+        exclude:
+          # macos-13 + 1.75 frequently hits xcode/sysroot incompatibilities;
+          # v1.0 does not promise that specific combination.
+          - os: macos-13
+            rust: "1.75"
+    env:
+      RUSTDOCFLAGS: "-D warnings"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain (${{ matrix.rust }})
+        uses: dtolnay/rust-toolchain@${{ matrix.rust }}
+
+      - name: Cache cargo build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.os }}-${{ matrix.rust }}
+
+      - name: cargo build
+        run: cargo build --verbose --locked
+
+      - name: cargo test
+        run: cargo test --all --verbose --locked
+
+      - name: cargo doc
+        run: cargo doc --no-deps --all-features
