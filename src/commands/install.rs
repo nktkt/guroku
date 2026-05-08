@@ -56,7 +56,8 @@ pub async fn run(cwd: &Path, frozen_lockfile: bool, ignore_scripts: bool) -> Res
         install_from_lock(&client, lock, &node_modules, &direct_dep_names).await?
     } else {
         tracing::info!("resolving {} root packages", roots.len());
-        let resolution = resolver::resolve(&client, &roots).await?;
+        let overrides = crate::overrides::merged(&manifest);
+        let resolution = resolver::resolve_with_overrides(&client, &roots, &overrides).await?;
         tracing::info!("resolved {} packages", resolution.len());
 
         let linked =
@@ -98,10 +99,15 @@ pub(crate) async fn install_from_resolution(
     node_modules: &Path,
     direct_deps: &[String],
 ) -> Result<Vec<linker::LinkedPackage>> {
-    let items: Vec<crate::registry::VersionInfo> =
-        resolution.iter().map(|(_, r)| r.info.clone()).collect();
+    // Only registry-sourced packages go through the CAS; local sources
+    // (file:/git:) are linked straight from their on-disk location.
+    let registry_items: Vec<crate::registry::VersionInfo> = resolution
+        .iter()
+        .filter(|(_, r)| r.local_source.is_none())
+        .map(|(_, r)| r.info.clone())
+        .collect();
 
-    let cas_results: Vec<Result<(String, PathBuf)>> = stream::iter(items)
+    let cas_results: Vec<Result<(String, PathBuf)>> = stream::iter(registry_items)
         .map(|info| {
             let client = client.clone();
             async move {

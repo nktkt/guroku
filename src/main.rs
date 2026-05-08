@@ -28,6 +28,7 @@ async fn main() {
         Command::Run { name, args } => commands::run::run(&cwd, name, &args).await,
         Command::Exec { command, args } => commands::exec::run(&cwd, &command, &args).await,
         Command::Workspaces => commands::workspaces::run(&cwd).await,
+        Command::Audit => commands::audit::run(&cwd).await,
     };
 
     if let Err(e) = result {

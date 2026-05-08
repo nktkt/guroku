@@ -40,6 +40,12 @@ pub fn tarball_cache_dir() -> Result<PathBuf> {
     Ok(home()?.join("cache").join("tarballs"))
 }
 
+/// `~/.guroku/cache/git` — local clones of git-dependency repositories (v0.5).
+/// Subdirectories are keyed by SHA-256 of the canonical clone URL.
+pub fn git_cache_dir() -> Result<PathBuf> {
+    Ok(home()?.join("cache").join("git"))
+}
+
 /// `~/.guroku/cache/metadata` — ETag-aware registry-metadata cache (v0.3).
 /// `<name>.json` is the response body; `<name>.etag` holds the ETag string.
 /// Scoped names are flattened the same way as `package_dir`.

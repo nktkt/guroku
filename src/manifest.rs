@@ -22,6 +22,14 @@ pub struct Manifest {
     pub bin: Option<serde_json::Value>,
     #[serde(default)]
     pub workspaces: Option<serde_json::Value>,
+    /// `package.json#overrides` (npm 8+) — short-circuit version selection
+    /// for the named transitive dep. v0.5 supports the simple top-level
+    /// `name → exact-version` form. `resolutions` (yarn) is read into the
+    /// same map.
+    #[serde(default)]
+    pub overrides: BTreeMap<String, String>,
+    #[serde(default)]
+    pub resolutions: BTreeMap<String, String>,
     #[serde(flatten)]
     pub other: BTreeMap<String, serde_json::Value>,
 }

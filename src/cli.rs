@@ -67,6 +67,10 @@ pub enum Command {
 
     /// List discovered workspace packages.
     Workspaces,
+
+    /// Query the registry's advisory database for known vulnerabilities
+    /// in `guroku.lock`.
+    Audit,
 }
 
 impl Cli {

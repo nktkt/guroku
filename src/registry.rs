@@ -1,5 +1,6 @@
 use crate::error::{GurokuError, Result};
 use crate::http_cache;
+use crate::npmrc::Npmrc;
 use bytes::Bytes;
 use serde::Deserialize;
 use std::collections::BTreeMap;
@@ -10,6 +11,7 @@ pub const DEFAULT_REGISTRY: &str = "https://registry.npmjs.org";
 #[derive(Debug, Clone)]
 pub struct RegistryClient {
     base: Url,
+    npmrc: Npmrc,
     http: reqwest::Client,
     use_http_cache: bool,
 }
@@ -21,6 +23,7 @@ impl RegistryClient {
             .build()?;
         Ok(Self {
             base,
+            npmrc: Npmrc::default(),
             http,
             use_http_cache: true,
         })
@@ -30,32 +33,59 @@ impl RegistryClient {
         Self::new(Url::parse(DEFAULT_REGISTRY).expect("default registry url is valid"))
     }
 
-    /// Build a client honouring the `registry=` setting in `<cwd>/.npmrc`
-    /// or `~/.npmrc`. Falls back to `with_default_registry` when neither
-    /// file is present or sets `registry`.
+    /// Build a client from the project + user `.npmrc`. Honours the
+    /// `registry`, `<scope>:registry`, and `_authToken` settings.
     pub fn from_npmrc(cwd: &std::path::Path) -> Result<Self> {
-        let rc = crate::npmrc::Npmrc::discover(cwd)?;
-        let url = Url::parse(rc.registry()).map_err(crate::error::GurokuError::from)?;
-        Self::new(url)
+        let npmrc = Npmrc::discover(cwd)?;
+        let url = Url::parse(npmrc.registry()).map_err(GurokuError::from)?;
+        let mut c = Self::new(url)?;
+        c.npmrc = npmrc;
+        Ok(c)
     }
 
-    /// Disable the on-disk ETag-aware metadata cache. Useful for tests.
     pub fn without_http_cache(mut self) -> Self {
         self.use_http_cache = false;
         self
     }
 
-    pub async fn fetch_metadata(&self, name: &str) -> Result<PackageMetadata> {
-        let url = self.base.join(name)?;
+    /// Default registry URL (after `from_npmrc` has resolved any
+    /// `registry=` override). Used by `guroku audit`.
+    pub fn registry_base(&self) -> &Url {
+        &self.base
+    }
 
-        // v0.3 ETag-aware cache: send If-None-Match if we have one cached.
+    /// Decide which registry URL to use for `name`. Scoped names
+    /// (`@scope/foo`) consult the npmrc's `<scope>:registry` setting
+    /// first; everything else falls through to the default base.
+    fn registry_for(&self, name: &str) -> Url {
+        if let Some(scope) = scope_of(name) {
+            if let Some(url) = self.npmrc.scoped_registry(scope) {
+                if let Ok(parsed) = Url::parse(url) {
+                    return parsed;
+                }
+            }
+        }
+        self.base.clone()
+    }
+
+    fn auth_for(&self, url: &Url) -> Option<&str> {
+        url.host_str().and_then(|h| self.npmrc.auth_token(h))
+    }
+
+    pub async fn fetch_metadata(&self, name: &str) -> Result<PackageMetadata> {
+        let base = self.registry_for(name);
+        let url = base.join(name)?;
+
         let cached = if self.use_http_cache {
             http_cache::read(name).ok().flatten()
         } else {
             None
         };
 
-        let mut req = self.http.get(url);
+        let mut req = self.http.get(url.clone());
+        if let Some(token) = self.auth_for(&url) {
+            req = req.bearer_auth(token);
+        }
         if let Some(c) = &cached {
             if let Some(etag) = &c.etag {
                 req = req.header(reqwest::header::IF_NONE_MATCH, etag);
@@ -70,7 +100,6 @@ impl RegistryClient {
                 tracing::debug!("metadata cache hit (304) for {name}");
                 return parse_metadata_bytes(&c.body);
             }
-            // The server says 304 but we have no cached body. Force a refetch.
             return self.fetch_metadata_uncached(name).await;
         }
         if status == reqwest::StatusCode::NOT_FOUND {
@@ -95,8 +124,13 @@ impl RegistryClient {
     }
 
     async fn fetch_metadata_uncached(&self, name: &str) -> Result<PackageMetadata> {
-        let url = self.base.join(name)?;
-        let resp = self.http.get(url).send().await?;
+        let base = self.registry_for(name);
+        let url = base.join(name)?;
+        let mut req = self.http.get(url.clone());
+        if let Some(token) = self.auth_for(&url) {
+            req = req.bearer_auth(token);
+        }
+        let resp = req.send().await?;
         if resp.status() == reqwest::StatusCode::NOT_FOUND {
             return Err(GurokuError::PackageNotFound {
                 name: name.to_string(),
@@ -108,18 +142,41 @@ impl RegistryClient {
     }
 
     pub async fn fetch_tarball(&self, url: &Url) -> Result<Bytes> {
-        let resp = self
-            .http
-            .get(url.clone())
-            .send()
-            .await?
-            .error_for_status()?;
+        let mut req = self.http.get(url.clone());
+        if let Some(token) = self.auth_for(url) {
+            req = req.bearer_auth(token);
+        }
+        let resp = req.send().await?.error_for_status()?;
         Ok(resp.bytes().await?)
+    }
+
+    /// Generic JSON POST used by `guroku audit`. Adds bearer auth when an
+    /// `_authToken` is configured for the URL's host.
+    pub async fn http_post_json(
+        &self,
+        url: &Url,
+        body: Vec<u8>,
+    ) -> std::result::Result<reqwest::Response, reqwest::Error> {
+        let mut req = self
+            .http
+            .post(url.clone())
+            .header(reqwest::header::CONTENT_TYPE, "application/json")
+            .body(body);
+        if let Some(token) = self.auth_for(url) {
+            req = req.bearer_auth(token);
+        }
+        req.send().await
     }
 }
 
 fn parse_metadata_bytes(body: &[u8]) -> Result<PackageMetadata> {
     serde_json::from_slice(body).map_err(GurokuError::from)
+}
+
+fn scope_of(name: &str) -> Option<&str> {
+    let rest = name.strip_prefix('@')?;
+    let (scope, _) = rest.split_once('/')?;
+    Some(scope)
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -132,15 +189,6 @@ pub struct PackageMetadata {
 }
 
 impl PackageMetadata {
-    /// Resolve a version spec against the metadata.
-    ///
-    /// Order of operations:
-    ///   1. Exact version match in `versions`.
-    ///   2. dist-tag lookup (`latest`, `next`, ...).
-    ///   3. Parse as an npm semver range and pick the highest matching
-    ///      version (this is what handles `^1.2.3`, `~1.0`, `>=1 <2`, etc.).
-    ///
-    /// Returns `NoMatchingVersion` if nothing matches.
     pub fn resolve(&self, spec: &str) -> Result<&VersionInfo> {
         if let Some(v) = self.versions.get(spec) {
             return Ok(v);

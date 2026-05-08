@@ -1,4 +1,5 @@
 pub mod add;
+pub mod audit;
 pub mod exec;
 pub mod install;
 pub mod remove;
@@ -44,15 +45,18 @@ pub(crate) fn into_linked_packages(
     resolution
         .iter()
         .filter_map(|(name, r)| {
-            let source_dir = cas_paths.get(name)?.clone();
+            // Local sources (file:/git:) bypass the CAS: we hardlink straight
+            // from the working tree.
+            let source_dir = match &r.local_source {
+                Some(p) => p.clone(),
+                None => cas_paths.get(name)?.clone(),
+            };
             let mut deps = std::collections::BTreeMap::new();
             for dep_name in r.info.dependencies.keys() {
                 if let Some(rd) = resolution.packages.get(dep_name) {
                     deps.insert(dep_name.clone(), rd.info.version.clone());
                 }
             }
-            // Best-effort: read the bin field from the package's own
-            // installed package.json. Errors are demoted to "no bins."
             let bin_entries = Manifest::read_from(&source_dir.join("package.json"))
                 .map(|m| m.bin_entries())
                 .unwrap_or_default();

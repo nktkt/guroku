@@ -91,6 +91,18 @@ pub enum GurokuError {
     #[error("`{name}` is not on PATH and was not found in node_modules/.bin")]
     BinNotFound { name: String },
 
+    #[error("file dependency at `{path}` has no readable package.json")]
+    FileDepMissingManifest { path: String },
+
+    #[error("git command failed for `{url}`: {detail}")]
+    GitCommandFailed { url: String, detail: String },
+
+    #[error("audit request failed: {0}")]
+    AuditFailed(String),
+
+    #[error("invalid override entry for `{name}`: {detail}")]
+    InvalidOverride { name: String, detail: String },
+
     #[error("{0}")]
     Other(String),
 }

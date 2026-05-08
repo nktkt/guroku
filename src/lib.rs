@@ -4,10 +4,12 @@
 //! as a library so that external tools can drive installs programmatically.
 //! The public API is deliberately small in v0.1 and will stabilise around v1.0.
 
+pub mod audit;
 pub mod cache;
 pub mod cli;
 pub mod commands;
 pub mod error;
+pub mod git;
 pub mod http_cache;
 pub mod integrity;
 pub mod linker;
@@ -15,9 +17,11 @@ pub mod lockfile;
 pub mod logging;
 pub mod manifest;
 pub mod npmrc;
+pub mod overrides;
 pub mod registry;
 pub mod resolver;
 pub mod scripts;
+pub mod specs;
 pub mod store;
 pub mod tarball;
 pub mod version;
