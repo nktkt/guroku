@@ -10,6 +10,7 @@
 use crate::error::Result;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum DepSpec {
     /// Standard registry resolution against an npm semver range.
     Range(String),
@@ -18,6 +19,13 @@ pub enum DepSpec {
     File(String),
     /// Git repository reference. Includes optional ref/branch/commit.
     Git(GitRef),
+    /// `npm:<real-name>@<inner>` — install a registry package under a
+    /// different local name. The `real_name` is the registry name; the
+    /// inner spec drives the resolver (typically a Range).
+    Alias {
+        real_name: String,
+        inner: Box<DepSpec>,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -41,6 +49,19 @@ pub fn classify(spec: &str) -> DepSpec {
     if let Some(rest) = s.strip_prefix("github:") {
         let url = format!("https://github.com/{rest}");
         return DepSpec::Git(parse_git(&url));
+    }
+    if let Some(rest) = s.strip_prefix("npm:") {
+        // `npm:<real-name>@<spec>` — alias to a registry package under a
+        // different local name. We split on the LAST `@` so scoped names
+        // (`@types/node@^20`) work.
+        let (real_name, inner_spec) = match rest.rsplit_once('@') {
+            Some((n, v)) if !n.is_empty() => (n.to_string(), v.to_string()),
+            _ => (rest.to_string(), "*".to_string()),
+        };
+        return DepSpec::Alias {
+            real_name,
+            inner: Box::new(DepSpec::Range(inner_spec)),
+        };
     }
     DepSpec::Range(s.to_string())
 }
@@ -72,6 +93,13 @@ pub fn unparse(spec: &DepSpec) -> String {
             Some(r) => format!("git+{}#{r}", g.url),
             None => format!("git+{}", g.url),
         },
+        DepSpec::Alias { real_name, inner } => {
+            let inner_str = match &**inner {
+                DepSpec::Range(r) => r.clone(),
+                other => unparse(other),
+            };
+            format!("npm:{real_name}@{inner_str}")
+        }
     }
 }
 

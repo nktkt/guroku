@@ -13,10 +13,6 @@ fn long_flag_prints_v1() {
     assert!(output.status.success(), "guroku --version exited non-zero");
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
-        stdout.contains("1.0.0"),
-        "expected stdout to contain '1.0.0', got: {stdout}"
-    );
-    assert!(
         stdout.contains(env!("CARGO_PKG_VERSION")),
         "expected stdout to contain CARGO_PKG_VERSION, got: {stdout}"
     );
@@ -30,10 +26,6 @@ fn short_flag_prints_v1() {
         .expect("failed to run guroku -V");
     assert!(output.status.success(), "guroku -V exited non-zero");
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(
-        stdout.contains("1.0.0"),
-        "expected stdout to contain '1.0.0', got: {stdout}"
-    );
     assert!(
         stdout.contains(env!("CARGO_PKG_VERSION")),
         "expected stdout to contain CARGO_PKG_VERSION, got: {stdout}"

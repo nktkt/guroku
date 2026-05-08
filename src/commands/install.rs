@@ -56,8 +56,11 @@ pub async fn run(cwd: &Path, frozen_lockfile: bool, ignore_scripts: bool) -> Res
         install_from_lock(&client, lock, &node_modules, &direct_dep_names).await?
     } else {
         tracing::info!("resolving {} root packages", roots.len());
-        let overrides = crate::overrides::merged(&manifest);
-        let resolution = resolver::resolve_with_overrides(&client, &roots, &overrides).await?;
+        // v1.1: use the manifest-aware overrides path so path-keyed and
+        // glob entries are honoured. Falls back to flat-name lookup for
+        // existing simple-overrides users.
+        let resolution =
+            resolver::resolve_with_manifest_overrides(&client, &roots, &manifest).await?;
         tracing::info!("resolved {} packages", resolution.len());
 
         let linked =
@@ -101,18 +104,20 @@ pub(crate) async fn install_from_resolution(
 ) -> Result<Vec<linker::LinkedPackage>> {
     // Only registry-sourced packages go through the CAS; local sources
     // (file:/git:) are linked straight from their on-disk location.
-    let registry_items: Vec<crate::registry::VersionInfo> = resolution
+    // Track (local_name, info) pairs so aliases (where info.name differs
+    // from the local key) round-trip correctly through cas_paths.
+    let registry_items: Vec<(String, crate::registry::VersionInfo)> = resolution
         .iter()
         .filter(|(_, r)| r.local_source.is_none())
-        .map(|(_, r)| r.info.clone())
+        .map(|(name, r)| (name.clone(), r.info.clone()))
         .collect();
 
     let cas_results: Vec<Result<(String, PathBuf)>> = stream::iter(registry_items)
-        .map(|info| {
+        .map(|(local_name, info)| {
             let client = client.clone();
             async move {
                 let path = super::fetch_into_cas(&client, &info).await?;
-                Ok((info.name.clone(), path))
+                Ok((local_name, path))
             }
         })
         .buffer_unordered(CONCURRENCY)

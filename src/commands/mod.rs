@@ -44,12 +44,14 @@ pub(crate) fn into_linked_packages(
 ) -> Vec<LinkedPackage> {
     resolution
         .iter()
-        .filter_map(|(name, r)| {
-            // Local sources (file:/git:) bypass the CAS: we hardlink straight
-            // from the working tree.
+        .filter_map(|(local_name, r)| {
+            // Local sources (file:/git:) bypass the CAS: we hardlink
+            // straight from the working tree. Otherwise look up by the
+            // *local* name (the resolution map key), which is what
+            // install_from_resolution keyed cas_paths on.
             let source_dir = match &r.local_source {
                 Some(p) => p.clone(),
-                None => cas_paths.get(name)?.clone(),
+                None => cas_paths.get(local_name)?.clone(),
             };
             let mut deps = std::collections::BTreeMap::new();
             for dep_name in r.info.dependencies.keys() {
@@ -60,8 +62,11 @@ pub(crate) fn into_linked_packages(
             let bin_entries = Manifest::read_from(&source_dir.join("package.json"))
                 .map(|m| m.bin_entries())
                 .unwrap_or_default();
+            // For aliases, the in-`node_modules` directory is the local
+            // (user-declared) name — `r.info.name` is the registry name
+            // and only matters at fetch time.
             Some(LinkedPackage {
-                name: r.info.name.clone(),
+                name: local_name.clone(),
                 version: r.info.version.clone(),
                 source_dir,
                 dependencies: deps,
