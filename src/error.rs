@@ -2,7 +2,16 @@ use std::io;
 use std::path::PathBuf;
 use thiserror::Error;
 
+/// The crate-wide error type.
+///
+/// Every fallible operation in guroku returns `Result<T, GurokuError>`
+/// (re-exported as [`crate::Result`]).
+///
+/// `#[non_exhaustive]` from v1.0 forward: new variants may be added in
+/// minor releases. Match with a `_` arm in code that isn't part of the
+/// guroku source tree.
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum GurokuError {
     #[error("io error at {path}: {source}")]
     Io {

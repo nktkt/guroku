@@ -1,6 +1,6 @@
 [package]
 name = "guroku"
-version = "0.5.0"
+version = "1.0.0"
 edition = "2021"
 rust-version = "1.75"
 description = "A fast, Rust-powered package manager for the JavaScript ecosystem."
@@ -40,6 +40,22 @@ shell-words = "1"
 [dev-dependencies]
 tempfile = "3"
 criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "lockfile_parse"
+harness = false
+
+[[bench]]
+name = "manifest_parse"
+harness = false
+
+[[bench]]
+name = "spec_classify"
+harness = false
+
+[[bench]]
+name = "version_satisfies"
+harness = false
 
 [profile.release]
 lto = "thin"
