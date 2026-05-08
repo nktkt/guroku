@@ -1,0 +1,11 @@
+{
+  "name": "guroku-example-with-file-dep",
+  "version": "0.1.0",
+  "description": "Example: a file:./path local dependency under guroku v0.5.",
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "ms": "^2.1.0",
+    "my-local-lib": "file:../local-lib"
+  }
+}

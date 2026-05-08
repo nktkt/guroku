@@ -1,0 +1,18 @@
+{
+  "name": "guroku-fixture-with-overrides",
+  "version": "0.1.0",
+  "description": "Fixture: package.json with overrides and resolutions.",
+  "license": "MIT",
+  "dependencies": {
+    "lodash": "^4.17.0",
+    "ms": "^2.1.0"
+  },
+  "overrides": {
+    "ms": "2.1.3",
+    "left-pad": "1.3.0"
+  },
+  "resolutions": {
+    "**/lodash": "4.17.21",
+    "left-pad": "1.0.0"
+  }
+}

@@ -1,0 +1,69 @@
+# audit-cron: scheduled `guroku audit` against the example projects.
+#
+# This workflow is intended as a TEMPLATE that downstream users can copy into
+# their own repositories to get a recurring vulnerability check on their
+# guroku-managed dependencies.
+#
+# Cadence: weekly (Mondays, 09:00 UTC). Advisory database updates lag behind
+# upstream dependency changes — new CVEs are typically published on a slower
+# rhythm than dep code churn — so a weekly run catches almost everything that
+# matters without burning CI minutes. Security-conscious projects (or those
+# with a broad dependency surface) may want to bump this to daily by changing
+# the cron expression below to `0 9 * * *`.
+#
+# The `issues: write` permission is set even though the present workflow does
+# not open issues; it is reserved so a follow-up edit (e.g. filing an issue
+# when `guroku audit` reports findings) can be made without triggering the
+# GitHub Actions workflow-permissions review prompt.
+
+name: audit-cron
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo artifacts
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build guroku (release)
+        run: cargo build --release
+
+      - name: Audit examples/sample-project
+        continue-on-error: true
+        working-directory: examples/sample-project
+        run: |
+          ../../target/release/guroku install --frozen-lockfile
+          ../../target/release/guroku audit
+
+      - name: Audit examples/with-lockfile
+        continue-on-error: true
+        working-directory: examples/with-lockfile
+        run: |
+          ../../target/release/guroku install --frozen-lockfile
+          ../../target/release/guroku audit
+
+      - name: Audit examples/with-overrides
+        continue-on-error: true
+        working-directory: examples/with-overrides
+        run: |
+          ../../target/release/guroku install --frozen-lockfile
+          ../../target/release/guroku audit

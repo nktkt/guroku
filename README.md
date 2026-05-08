@@ -4,7 +4,7 @@
 
 `guroku` is an experimental package manager inspired by [npm](https://www.npmjs.com/), [pnpm](https://pnpm.io/), and [bun](https://bun.sh/), built from scratch in Rust. The goal is to combine pnpm's content-addressable storage model with bun's installation speed, while staying small, hackable, and easy to read.
 
-> **Status:** v0.4 ships the "It's usable" milestone — lifecycle scripts (`postinstall` etc.), `guroku run`/`guroku exec`, workspace discovery, `node_modules/.bin/` shims, and `.npmrc` reading on top of v0.3's CAS + strict layout. Workspace inter-dep linking and registry auth tokens land in v0.5. Pre-alpha; expect rough edges.
+> **Status:** v0.5 ships the "It plays nice" milestone — bearer-auth + scoped private registries, `file:` and `git+` dependencies, `package.json#overrides` / `resolutions`, and `guroku audit` against the npm advisory database. Workspace inter-dep linking and the long-promised PubGrub resolver replacement are the next two big targets, slated for v0.6 / v1.0. Pre-alpha; expect rough edges.
 
 ---
 
@@ -78,12 +78,12 @@
 - [x] `guroku exec <cmd>`; `guroku dlx` deferred to v0.4.x
 - [x] `.npmrc` reading (registry + scoped registry); `_authToken` parsed, sent on requests in v0.5
 
-### v0.5 — "It plays nice"
-- [ ] Private registry support (auth tokens, scoped registries)
-- [ ] Git dependencies (`git+https://...`)
-- [ ] Local / file dependencies (`file:../foo`)
-- [ ] `package.json` overrides / resolutions
-- [ ] `guroku audit` (advisory database lookup)
+### v0.5 — "It plays nice" *(shipped 2026-05-08)*
+- [x] Private registry support — `_authToken` bearer auth + `<scope>:registry=` routing
+- [x] Git dependencies (`git+https://`, `git+ssh://`, `github:user/repo[#ref]`)
+- [x] Local / file dependencies (`file:./path`)
+- [x] `package.json#overrides` / `resolutions` — simple flat-name → exact-version form (path-keyed and glob forms parse but aren't matched yet)
+- [x] `guroku audit` — npm advisories bulk endpoint
 
 ### v1.0 — "It's stable"
 - [ ] Stable lockfile format

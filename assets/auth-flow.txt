@@ -1,0 +1,93 @@
+guroku v0.5 -- outgoing HTTP request authentication flow
+=========================================================
+
+      +-------------------------------------------------+
+      | RegistryClient method called for package `name` |
+      +-------------------------------------------------+
+                              |
+                              v
+                  < is `name` scoped? >
+                  < (`@scope/...`)    >
+                     |             |
+                  YES|             |NO
+                     v             v
+   +------------------------+   +-----------------------+
+   | look up                |   | use default `base`    |
+   | `<scope>:registry=`    |   | (registry_for)        |
+   | in npmrc               |   +-----------+-----------+
+   | (scoped_registry)      |               |
+   +-----------+------------+               |
+               |                            |
+       < entry set? >                       |
+        |         |                         |
+     YES|         |NO                       |
+        v         v                         |
+  +---------+  +-----------------+          |
+  | use     |  | use default     |          |
+  | scoped  |  | `base`          |          |
+  | URL     |  +--------+--------+          |
+  +----+----+           |                   |
+       |                |                   |
+       +-------+--------+-------------------+
+               |
+               v
+   +-----------------------------------------+
+   | construct full URL:                     |
+   |   base.join(name)                       |
+   |   (or tarball URL passed in)            |
+   +--------------------+--------------------+
+                        |
+                        v
+        < npmrc has                       >
+        < `//<host-of-url>/:_authToken=`? >
+        < (auth_for / auth_token)         >
+              |                  |
+           YES|                  |NO
+              v                  v
+   +---------------------+  +--------------------+
+   | add header          |  | no auth header     |
+   | Authorization:      |  +---------+----------+
+   |   Bearer <token>    |            |
+   +----------+----------+            |
+              |                       |
+              +-----------+-----------+
+                          |
+                          v
+            +-----------------------------+
+            | (optional) add header       |
+            | If-None-Match: <etag>       |
+            | if http_cache has one       |
+            | (http_cache::read)          |
+            +--------------+--------------+
+                           |
+                           v
+                  +-----------------+
+                  | send via reqwest|
+                  +--------+--------+
+                           |
+                           v
+                    < response status >
+        +------+--------+--------+--------+
+        |      |        |        |        |
+        v      v        v        v        v
+      +---+ +-----+  +-----+  +-----+  +-----+
+      |304| | 401 |  | 404 |  | 200 |  | ... |
+      +---+ +-----+  +-----+  +-----+  +-----+
+        |      |        |        |
+        v      v        v        v
+   cache-hit  unauth  not-found  ok
+   (reuse    (surface (surface  (write to
+    cached    error)   error)    http_cache)
+    body)
+
+Legend (module : file -- key items)
+-----------------------------------
+  registry   : src/registry.rs
+                 RegistryClient::registry_for
+                 RegistryClient::auth_for
+  npmrc      : src/npmrc.rs
+                 Npmrc::scoped_registry
+                 Npmrc::auth_token
+  http_cache : src/http_cache.rs
+                 read  (load etag + body)
+                 write (store on 200 ok)

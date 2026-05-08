@@ -1,0 +1,11 @@
+{
+  "name": "guroku-example-with-git-dep",
+  "version": "0.1.0",
+  "description": "Example: a git+https:// dependency under guroku v0.5.",
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "ms": "^2.1.0",
+    "guroku-fixture-tiny": "git+https://github.com/example/guroku-fixture-tiny.git#main"
+  }
+}

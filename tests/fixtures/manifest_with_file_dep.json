@@ -1,0 +1,11 @@
+{
+  "name": "guroku-fixture-with-file-dep",
+  "version": "0.1.0",
+  "description": "Fixture: package.json mixing registry, file:, and git: deps.",
+  "license": "MIT",
+  "dependencies": {
+    "ms": "^2.1.0",
+    "my-local": "file:../my-local",
+    "my-fork": "git+https://github.com/example/my-fork.git#main"
+  }
+}

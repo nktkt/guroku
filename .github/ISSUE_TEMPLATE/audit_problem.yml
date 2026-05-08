@@ -1,0 +1,82 @@
+name: "Audit problem"
+description: "Report a `guroku audit` failure or unexpected output."
+title: "[audit] "
+labels: ["audit", "bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting an issue with `guroku audit`.
+
+        Before filing, please skim:
+
+        - `docs/audit.md` — user-facing documentation for the audit command.
+        - `docs/internals/audit.md` — internals, including how guroku talks to the registry advisories endpoint.
+
+        The more detail you can give about your registry, lockfile, and the exact command output, the faster this can be triaged.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: "What happened?"
+      description: "What command did you run, what did you expect to happen, and what did you actually observe?"
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: "Output"
+      description: "Full output of `GUROKU_LOG=debug guroku audit`."
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: lock-summary
+    attributes:
+      label: "guroku.lock summary"
+      description: "Paste your `guroku.lock` (or a redacted excerpt showing the relevant packages)."
+      render: json
+  - type: input
+    id: guroku-version
+    attributes:
+      label: "guroku version"
+      description: "Output of `guroku --version`."
+      placeholder: "0.5.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: "Operating system"
+      options:
+        - macOS Apple Silicon
+        - macOS Intel
+        - Linux x86_64
+        - Linux aarch64
+        - Windows
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: registry
+    attributes:
+      label: "Registry"
+      options:
+        - npmjs.org
+        - Verdaccio
+        - Artifactory
+        - Nexus
+        - GitHub Packages
+        - other / not sure
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: "Did you check?"
+      options:
+        - label: "I read `docs/audit.md`."
+        - label: "Plain `curl <registry>/-/npm/v1/security/advisories/bulk` against my registry returns a sensible response."
+        - label: "If on a private registry, I confirmed the registry actually proxies the advisories endpoint."
+  - type: textarea
+    id: anything-else
+    attributes:
+      label: "Anything else?"
+      description: "Any other context, screenshots, or notes."

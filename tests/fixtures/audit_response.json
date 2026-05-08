@@ -1,0 +1,30 @@
+{
+  "lodash": [
+    {
+      "id": 1065,
+      "title": "Prototype Pollution in lodash",
+      "severity": "high",
+      "url": "https://github.com/advisories/GHSA-xxxx-yyyy-zzzz",
+      "vulnerable_versions": "<4.17.21",
+      "patched_versions": ">=4.17.21"
+    }
+  ],
+  "minimist": [
+    {
+      "id": "GHSA-aaaa-bbbb-cccc",
+      "title": "Prototype pollution in minimist",
+      "severity": "moderate",
+      "url": "https://github.com/advisories/GHSA-aaaa-bbbb-cccc",
+      "vulnerable_versions": "<1.2.6",
+      "patched_versions": ">=1.2.6"
+    },
+    {
+      "id": "GHSA-dddd-eeee-ffff",
+      "title": "Inefficient regex in minimist",
+      "severity": "low",
+      "url": "https://github.com/advisories/GHSA-dddd-eeee-ffff",
+      "vulnerable_versions": "<1.2.7",
+      "patched_versions": ">=1.2.7"
+    }
+  ]
+}

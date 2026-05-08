@@ -1,0 +1,81 @@
+guroku audit -- flow diagram
+============================================================================
+
+       +-----------------------+
+       |  CLI: guroku audit    |   (commands::audit)
+       +-----------+-----------+
+                   |
+                   v
+       +-----------------------+
+       | Lockfile::read_from   |   (lockfile)
+       |   ./guroku.lock       |
+       +-----------+-----------+
+                   |
+                   v
+              < lockfile present? >
+               /                \
+            NO                   YES
+             |                    |
+             v                    v
+   +-------------------+    +-----------------------+
+   | Err("guroku.lock  |    | RegistryClient::      |
+   |   not found")     |    |   from_npmrc(cwd)     |  (registry, npmrc)
+   +-------------------+    | resolves registry=    |
+                            | + tokens from .npmrc  |
+                            +-----------+-----------+
+                                        |
+                                        v
+                            +-----------------------+
+                            | build request body    |  (audit)
+                            | { "<name>":           |
+                            |   ["<ver>", ...] }    |
+                            | from lockfile.packages|
+                            +-----------+-----------+
+                                        |
+                                        v
+                            +-----------------------+
+                            | POST <registry>/-/    |
+                            |   npm/v1/security/    |
+                            |   advisories/bulk     |
+                            |                       |
+                            | scope -> other host?  |
+                            |   send token there    |
+                            +-----------+-----------+
+                                        |
+                                        v
+                                 < HTTP status? >
+                                  /            \
+                               2xx              else
+                                |                 |
+                                v                 v
+                  +-----------------------+   +------------------+
+                  | parse JSON ->         |   | Err(AuditFailed) |
+                  |   AuditReport         |   +------------------+
+                  | { findings:           |
+                  |   BTreeMap<name,      |
+                  |     Vec<Advisory>> }  |
+                  +-----------+-----------+
+                              |
+                              v
+                  +-----------------------+
+                  | print_report -> stdout|   (audit)
+                  +-----------+-----------+
+                              |
+                              v
+                       < any findings? >
+                        /             \
+                      NO               YES
+                       |                |
+                       v                v
+                 +-----------+    +------------------+
+                 |  exit 0   |    | exit 1           |
+                 +-----------+    | Err(Other)       |
+                                  +------------------+
+
+Legend (module : filename)
+----------------------------------------------------------------------------
+  audit            : src/audit.rs
+  commands::audit  : src/commands/audit.rs
+  registry         : src/registry.rs
+  lockfile         : src/lockfile.rs
+  npmrc            : src/npmrc.rs

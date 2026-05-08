@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-05-08
+
+The "It plays nice" milestone.
+
+### Added
+- Private-registry support: `_authToken` from `.npmrc` is sent as `Authorization: Bearer <token>` on outgoing HTTP. `<scope>:registry=<url>` actually routes scoped fetches.
+- `RegistryClient` now carries an `Npmrc`. `from_npmrc(cwd)` is the production constructor; `registry_for(name)` and `auth_for(url)` handle routing and auth.
+- `file:./path` dependencies install via local-source linking (no CAS, no integrity check).
+- `git+https://...`, `git+ssh://...`, `github:user/repo[#ref]`, `git://...` dependencies. Subprocess `git clone` into `~/.guroku/cache/git/<sha>/<safe-rev>/`. Idempotent via a `.git-ready` marker.
+- `package.json#overrides` (npm 8+) and `resolutions` (yarn classic) for transitive version pinning. Simple flat `name → exact-version` form. Overrides win on conflict with resolutions.
+- `guroku audit` — POSTs the lockfile package set to `<registry>/-/npm/v1/security/advisories/bulk` and prints a report. Non-zero exit on findings.
+- New public modules: `guroku::specs`, `guroku::overrides`, `guroku::git`, `guroku::audit`, `guroku::commands::audit`.
+- `Manifest` gained typed `overrides` and `resolutions` BTreeMap fields.
+- `Resolved` gained `local_source: Option<PathBuf>` so the install pipeline can skip the CAS for file:/git: deps.
+- New errors: `FileDepMissingManifest`, `GitCommandFailed`, `AuditFailed`, `InvalidOverride`.
+- `cache::git_cache_dir()` helper.
+
+### Changed
+- `RegistryClient` internal layout (now holds `Npmrc`). Public constructors are unchanged.
+- `Resolved` API changed: `Resolved { info, local_source }`. Library-API consumers that constructed `Resolved` directly need to add `local_source: None`.
+- `resolver::resolve_with_overrides` is the new public entry point used when the caller has overrides; `resolver::resolve` still works (calls `resolve_with_overrides` with an empty map).
+
+### Known limitations
+- Path-keyed overrides (`"foo > bar"`) and yarn glob keys (`**/foo`) parse but don't match anything yet.
+- npm Basic auth (`auth=`, `_password=`) is not honoured. Bearer tokens only.
+- `${VAR}` interpolation in `.npmrc` not yet supported.
+- `npm_config_*` environment variables not yet read.
+- Git submodules and sparse checkouts not supported.
+- `--audit-level`, `--json`, `audit fix` not yet supported.
+- Workspace inter-dep linking still pending (deferred to v0.6).
+
 ## [0.4.0] - 2026-05-06
 
 The "It's usable" milestone.

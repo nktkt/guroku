@@ -1,0 +1,13 @@
+{
+  "name": "guroku-example-with-overrides",
+  "version": "0.1.0",
+  "description": "Example: package.json#overrides pins a transitive dep regardless of what the parent declares.",
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "is-odd": "^3.0.0"
+  },
+  "overrides": {
+    "is-number": "6.0.0"
+  }
+}

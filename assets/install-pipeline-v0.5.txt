@@ -1,0 +1,157 @@
+guroku v0.5 :: install pipeline (file:/git: + auth + overrides)
+================================================================
+
+           +--------------------------+
+           |    `guroku install`      |
+           |    (commands::install)   |
+           +-------------+------------+
+                         |
+                         v
+           +--------------------------+
+           | 1. read package.json     |
+           |    Manifest::read_from   |
+           +-------------+------------+
+                         |
+                         v
+           +--------------------------+
+           | 2. parse roots into      |
+           |    (name, raw_spec)      |
+           |    pairs                 |
+           +-------------+------------+
+                         |
+                         v
+           +--------------------------+
+           | 3. read guroku.lock      |
+           |    (if present)          |
+           +-------------+------------+
+                         |
+                         v
+                  < --ignore-scripts? >
+                  /                  \
+              YES /                    \ NO
+                 |                      |
+                 |   (skip ALL hook     |
+                 |    boxes marked *)   |
+                 |                      v
+                 |       +--------------------------+
+                 |       | 4. * ROOT preinstall     |
+                 |       |      hook (scripts)      |
+                 |       +-------------+------------+
+                 |                     |
+                 +---------+-----------+
+                           |
+                           v
+                  < --frozen-lockfile? >
+                  /                    \
+              YES /                      \ NO
+                 v                        v
+   +-----------------------+   +-----------------------------+
+   | 5a. install_from_lock |   | 5b. resolver::               |
+   |     (skip resolution) |   |     resolve_with_overrides   |
+   +-----------+-----------+   |------------------------------|
+               |               | - apply package.json#        |
+               |               |   overrides / resolutions    |
+               |               |   (overrides)                |
+               |               | - classify each spec:        |
+               |               |   Range / File / Git (specs) |
+               |               | - Range -> registry fetch    |
+               |               |   (auth via npmrc)           |
+               |               | - File  -> read local        |
+               |               |   manifest from disk         |
+               |               | - Git   -> clone (subproc)   |
+               |               |   + read manifest (git)      |
+               |               | - BFS over deps,             |
+               |               |   sticky-first (lock reuse)  |
+               |               +--------------+---------------+
+               |                              |
+               |                              v
+               |               +-----------------------------+
+               |               | 6. write guroku.lock        |
+               |               |    Lockfile::write_to       |
+               |               |    (skipped if frozen)      |
+               |               +--------------+--------------+
+               |                              |
+               +--------------+---------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 7. parallel CAS pipeline            |
+           |    (Range entries only,             |
+           |     concurrency = 8)                |
+           |-------------------------------------|
+           | - fetch tarball (registry, auth)    |
+           | - verify SHA-512    (store)         |
+           | - extract into ~/.guroku/cas/       |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 8. local-source entries skip CAS    |
+           |    File / Git -> hardlink straight  |
+           |    from disk into                   |
+           |    .guroku/<id>/node_modules/<name> |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 9. linker::populate_node_modules    |
+           |-------------------------------------|
+           | - mkdir node_modules/.guroku        |
+           | - hardlinks: CAS / local-src -->    |
+           |     .guroku/<id>/                   |
+           |       node_modules/<name>           |
+           | - sibling symlinks for each         |
+           |   package's deps                    |
+           | - top-level surface symlinks for    |
+           |   direct deps                       |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 10. linker::populate_bin_dir        |
+           |     node_modules/.bin/<name> shims  |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 11. * PER-PKG lifecycle hooks       |
+           |     preinstall / install /          |
+           |     postinstall (scripts)           |
+           |     best-effort, warn-on-fail       |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 12. * ROOT install hook (scripts)   |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 13. * ROOT postinstall hook         |
+           +------------------+------------------+
+                              |
+                              v
+           +-------------------------------------+
+           | 14. * ROOT prepare hook             |
+           +------------------+------------------+
+                              |
+                              v
+                  +-----------------------+
+                  | populated node_modules|
+                  +-----------------------+
+
+  (*) boxes are skipped entirely when --ignore-scripts is set.
+
+----------------------------------------------------------------
+Legend (module : filename)
+  commands::install : src/commands/install.rs
+  resolver          : src/resolver.rs
+  specs             : src/specs.rs
+  git               : src/git.rs
+  registry          : src/registry.rs
+  npmrc             : src/npmrc.rs
+  overrides         : src/overrides.rs
+  store             : src/store.rs
+  linker            : src/linker.rs
+  scripts           : src/scripts.rs
+  lockfile          : src/lockfile.rs
