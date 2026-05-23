@@ -21,7 +21,7 @@ jobs:
   msrv:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # MSRV is hard-coded here; it MUST stay in sync with `rust-version`
       # in Cargo.toml. If you change one, change the other.
